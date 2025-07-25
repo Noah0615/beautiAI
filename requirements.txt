@@ -1,0 +1,13 @@
+torch >= 1.9.1
+torchvision
+timm
+pillow
+numpy
+ipywidgets
+scikit-image
+matplotlib
+validators
+requests
+opencv-python
+seaborn
+pyfacer 
