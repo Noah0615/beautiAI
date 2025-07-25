@@ -11,3 +11,6 @@ requests
 opencv-python
 seaborn
 pyfacer 
+scikit-learn
+flask 
+
