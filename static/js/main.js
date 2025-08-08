@@ -4,6 +4,9 @@
 // 업로드/촬영된 이미지를 서버로 보낼 때 사용할 전역 변수
 let fileForAnalysis = null;
 
+// 로그인된 사용자 정보를 저장할 전역 변수
+window.loggedInUser = null;
+
 /******************************************************
  * 페이지 전환 관련
  ******************************************************/
@@ -80,6 +83,10 @@ async function startAnalysis() {
         alert("먼저 사진을 선택하거나 촬영해주세요.");
         return;
     }
+
+    // 이전에 활성화된 모든 로딩 단계를 재설정
+    const allSteps = document.querySelectorAll('.loading-step');
+    allSteps.forEach(step => step.classList.remove('active'));
 
     // 로딩 화면으로 이동
     showPage('loading');
@@ -212,6 +219,144 @@ function takeSnapshot() {
 }
 
 /******************************************************
+ * 로그인/회원가입 모달 관련
+ ******************************************************/
+/**
+ * 로그인 모달 표시
+ */
+function showLoginModal() {
+    document.getElementById('loginModal').style.display = 'block';
+}
+
+/**
+ * 로그인 모달 닫기
+ */
+function closeLoginModal() {
+    document.getElementById('loginModal').style.display = 'none';
+}
+
+/**
+ * 회원가입 모달 표시
+ */
+function showSignupModal() {
+    document.getElementById('signupModal').style.display = 'block';
+}
+
+/**
+ * 회원가입 모달 닫기
+ */
+function closeSignupModal() {
+    document.getElementById('signupModal').style.display = 'none';
+}
+
+/**
+ * 프로필 모달 닫기
+ */
+function closeProfileModal() {
+    document.getElementById('profileModal').style.display = 'none';
+}
+
+/**
+ * 회원가입 처리
+ */
+function signupUser() {
+    const name = document.querySelector('#signupModal input[placeholder="아이디"]').value;
+    const password = document.querySelector('#signupModal input[placeholder="비밀번호"]').value;
+    const email = document.querySelector('#signupModal input[placeholder="이메일"]').value;
+    const sex = document.querySelector('#signupModal input[name="sex"]:checked')?.value;
+
+    if (!name || !password || !email || !sex) {
+        alert('모든 정보를 입력해주세요!');
+        return;
+    }
+
+    fetch('/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, sex })
+    })
+        .then(response => {
+            if (response.ok) {
+                alert('회원가입 성공!');
+                closeSignupModal();
+            } else {
+                alert('회원가입 실패!');
+            }
+        })
+        .catch(error => {
+            console.error('Signup error:', error);
+            alert('오류가 발생했습니다.');
+        });
+}
+
+/**
+ * 로그인 처리
+ */
+function loginUser() {
+    const name = document.querySelector('#loginModal input[placeholder="아이디"]').value;
+    const password = document.querySelector('#loginModal input[placeholder="비밀번호"]').value;
+
+    if (!name || !password) {
+        alert("아이디와 비밀번호를 입력해주세요.");
+        return;
+    }
+
+    fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, password })
+    })
+        .then(response => {
+            if (!response.ok) throw new Error("로그인 실패");
+            return fetch('/me', { credentials: 'include' });
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const user = data.user;
+                window.loggedInUser = user;
+
+                // 네비게이션 바에 프로필 버튼 추가
+                const nav = document.querySelector('nav ul');
+                if (!document.querySelector('#profileNav')) {
+                    const profileItem = document.createElement('li');
+                    profileItem.innerHTML = `<a href="#" id="profileNav" onclick="showProfile()">👤 ${user.name}</a>`;
+                    nav.appendChild(profileItem);
+                }
+
+                alert('로그인 성공!');
+                closeLoginModal();
+            } else {
+                alert('로그인 실패: 사용자 정보를 불러올 수 없습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('Login error:', error);
+            alert('로그인 중 오류가 발생했습니다.');
+        });
+}
+
+/**
+ * 사용자 프로필 표시
+ */
+function showProfile() {
+    const user = window.loggedInUser;
+    if (!user) {
+        alert("로그인된 사용자가 없습니다.");
+        return;
+    }
+
+    document.getElementById('profileContent').innerHTML = `
+        <p><strong>이름:</strong> ${user.name}</p>
+        <p><strong>이메일:</strong> ${user.email}</p>
+        <p><strong>성별:</strong> ${user.sex}</p>
+        ${user.image ? `<img src="${user.image}" style="width:100px; border-radius:10px;">` : '<p>이미지 없음</p>'}
+    `;
+    document.getElementById('profileModal').style.display = 'block';
+}
+
+/******************************************************
  * 탭/시뮬레이션/공유 등 UI 유틸
  ******************************************************/
 /**
@@ -290,6 +435,8 @@ uploadAreaContainer.addEventListener('drop', (e) => {
  */
 function createParticles() {
     const container = document.querySelector('.animated-bg');
+    if (!container) return; // 컨테이너가 없으면 실행하지 않음
+
     for (let i = 0; i < 20; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
