@@ -584,6 +584,12 @@ def login():
     }
     return jsonify({'status': 'success'}), 200
 
+# logout route
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear() # 세션 클리어
+    return jsonify({'status': 'success'}), 200
+
 #fetch user info
 @app.route('/me', methods=['GET'])
 def get_profile():
