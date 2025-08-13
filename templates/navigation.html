@@ -1,53 +1,53 @@
-    <div class="animated-bg">
-        <!-- 네비게이션 -->
-        <nav>
-            <ul>
-                <li><a href="#" onclick="showPage('home')">홈</a></li>
-                <li><a href="#" onclick="showPage('upload')">진단하기</a></li>
-                <li><a href="#" onclick="showPage('guide')">컬러 가이드</a></li>
-                <li><a href="#" onclick="showPage('about')">팀 소개</a></li>
-                <li><a href="#" onclick="showLoginModal()">로그인</a></li>
-                <li><a href="#" onclick="showSignupModal()">회원가입</a></li>
-            </ul>
-        </nav>
-        <!-- 로그인 모달 -->
-        <div id="loginModal" class="modal">
-            <div class="modal-content">
-                <span class="close-button" onclick="closeLoginModal()">&times;</span>
-                <h3>로그인</h3>
-                <br>
-                <input type="text" placeholder="아이디" style="margin-bottom:1rem; width:80%; padding:0.5rem;">
-                <input type="password" placeholder="비밀번호" style="margin-bottom:1rem; width:80%; padding:0.5rem;">
-                <button class="cta-button" style="width:80%;" onclick="loginUser()">로그인</button>
-            </div>
-        </div>
-        <!-- 회원가입 모달 -->
-        <div id="signupModal" class="modal">
-            <div class="modal-content">
-                <span class="close-button" onclick="closeSignupModal()">&times;</span>
-                <h3>회원가입</h3>
-                <br>
-                <input type="text" placeholder="아이디" style="margin-bottom:1rem; width:80%; padding:0.5rem;">
-                <input type="password" placeholder="비밀번호" style="margin-bottom:1rem; width:80%; padding:0.5rem;">
-                <input type="email" placeholder="이메일" style="margin-bottom:1rem; width:80%; padding:0.5rem;">
-                <div style="margin-bottom:1rem; width:80%; text-align:left; margin:auto;">
-                    <span style="margin-right:1rem;">성별:</span>
-                    <label>
-                        <input type="radio" name="sex" value="male" style="margin-right:0.5rem;"> 남성
-                    </label>
-                    <label style="margin-left:1rem;">
-                        <input type="radio" name="sex" value="female" style="margin-right:0.5rem;"> 여성
-                    </label>
-                </div>
-                <br>
-                <button class="cta-button" style="width:80%;" onclick="signupUser()">회원가입</button>
-            </div>
-        </div>
+<nav>
+    <ul>
+        <li><a href="#" onclick="showPage('home')">홈</a></li>
+        <li><a href="#" onclick="showPage('upload')">진단하기</a></li>
+        <li><a href="#" onclick="showPage('guide')">컬러 가이드</a></li>
+        <li><a href="#" onclick="showPage('about')">팀 소개</a></li>
+        <li id="loginNav"><a href="#" onclick="showLoginModal()">로그인</a></li>
+        <li id="signupNav"><a href="#" onclick="showSignupModal()">회원가입</a></li>
+    </ul>
+</nav>
 
-        <div id="profileModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeProfile()">&times;</span>
-            <h3> 사용자 정보</h3>
-            <div id="profileContent" style="margin-top: 1rem;"></div>
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeLoginModal()">&times;</span>
+        <h3>로그인</h3>
+        <br>
+        <input type="text" id="loginName" placeholder="아이디" style="margin-bottom:1rem; width:80%; padding:0.5rem;">
+        <input type="password" id="loginPassword" placeholder="비밀번호"
+            style="margin-bottom:1rem; width:80%; padding:0.5rem;">
+        <button class="cta-button" style="width:80%;" onclick="loginUser()">로그인</button>
+    </div>
+</div>
+
+<div id="signupModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeSignupModal()">&times;</span>
+        <h3>회원가입</h3>
+        <br>
+        <input type="text" id="signupName" placeholder="아이디" style="margin-bottom:1rem; width:80%; padding:0.5rem;">
+        <input type="password" id="signupPassword" placeholder="비밀번호"
+            style="margin-bottom:1rem; width:80%; padding:0.5rem;">
+        <input type="email" id="signupEmail" placeholder="이메일" style="margin-bottom:1rem; width:80%; padding:0.5rem;">
+        <div style="margin-bottom:1rem; width:80%; text-align:left; margin:auto;">
+            <span style="margin-right:1rem;">성별:</span>
+            <label>
+                <input type="radio" name="sex" value="male" style="margin-right:0.5rem;"> 남성
+            </label>
+            <label style="margin-left:1rem;">
+                <input type="radio" name="sex" value="female" style="margin-right:0.5rem;"> 여성
+            </label>
         </div>
-        </div>
+        <br>
+        <button class="cta-button" style="width:80%;" onclick="signupUser()">회원가입</button>
+    </div>
+</div>
+
+<div id="profileModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeProfile()">&times;</span>
+        <h3>사용자 정보</h3>
+        <div id="profileContent" style="margin-top: 1rem;"></div>
+    </div>
+</div>
