@@ -6,8 +6,9 @@ import cv2
 import numpy as np
 import joblib
 import facer
+from fb import get_db
 from sklearn.cluster import KMeans
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, session
 from werkzeug.utils import secure_filename
 import base64
 from io import BytesIO
@@ -24,6 +25,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 # Flask 웹 애플리케이션 초기화
 app = Flask(__name__, template_folder='templates', static_folder='static')
+app.secret_key = '12345'
 
 # 웹앱 기본 설정
 UPLOAD_FOLDER = 'uploads'
@@ -509,6 +511,86 @@ def analyze_lighting():
 def uploaded_file(filename):
     """업로드된 이미지 파일을 제공하는 라우트"""
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+#store user's data in database
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'status': 'error', 'message': 'Invalid or missing JSON'}), 400
+
+    name = data.get('name')
+    password = data.get('password')
+    email = data.get('email')
+    sex = data.get('sex')
+
+    if not name or not password or not email or not sex:
+        return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
+
+    db = get_db()
+    users = db.collection('users')
+
+    # Enforce unique email (recommended) — fast lookup by doc id
+    # Use email as document id to guarantee uniqueness
+    doc_ref = users.document(email)
+    if doc_ref.get().exists:
+        return jsonify({'status': 'error', 'message': 'Email already exists'}), 400
+
+    # If you also want to enforce unique name, query:
+    same_name = users.where('name', '==', name).limit(1).stream()
+    if any(same_name):
+        return jsonify({'status': 'error', 'message': 'Name already taken'}), 400
+
+    # Create user document
+    doc_ref.set({
+        'name': name,
+        'email': email,
+        'password': password,  # ⚠️ store hashed later
+        'sex': sex,
+        'image': None
+    })
+
+    return jsonify({'status': 'success'}), 200
+
+#check username and passowrd when logging in
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json(silent=True)
+    name = data.get('name')
+    password = data.get('password')
+
+    if not name or not password:
+        return jsonify({'status': 'error', 'message': 'Missing name or password'}), 400
+
+    db = get_db()
+    users = db.collection('users')
+
+    # Keep compatibility with your existing frontend: login by name
+    # (If multiple docs have same name, we take the first one found.)
+    q = users.where('name', '==', name).limit(1).stream()
+    user_doc = next(q, None)
+
+    if not user_doc:
+        return jsonify({'status': 'error', 'message': 'Invalid name or password'}), 401
+
+    user = user_doc.to_dict()
+    if user.get('password') != password:
+        return jsonify({'status': 'error', 'message': 'Invalid name or password'}), 401
+
+    session['user'] = {
+        'name': user['name'],
+        'email': user['email'],
+        'sex': user['sex'],
+        'image': None if not user.get('image') else f"/user_image/{user['name']}"
+    }
+    return jsonify({'status': 'success'}), 200
+
+#fetch user info
+@app.route('/me', methods=['GET'])
+def get_profile():
+    user = session.get('user')
+    if not user:
+        return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
+    return jsonify({'status': 'success', 'user': user}), 200
 
 # ==============================================================================
 # 메인 실행 부분
