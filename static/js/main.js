@@ -142,9 +142,13 @@ async function startAnalysis() {
             <img src="${data.uploaded_image_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
         `;
 
+        analyzedClusterId = data.cluster_id;
+        uploadedFilename = data.uploaded_image_url.split('/').pop(); // URL에서 파일명 추출
+
         // 로딩 인터벌 정리 및 결과 페이지로 전환
         clearInterval(progressInterval);
         showPage('result');
+
 
     } catch (error) {
         console.error('Analysis failed:', error);
@@ -164,6 +168,9 @@ const modal = document.getElementById('webcamModal');
 const video = document.getElementById('webcamVideo');
 // getUserMedia로 얻는 MediaStream을 추후 정지하기 위해 저장
 let stream = null;
+
+let analyzedClusterId = null; // 분석된 클러스터 ID
+let uploadedFilename = null; // 업로드된 파일의 이름
 
 /**
  * 웹캠 열기: 사용자에게 카메라 접근 권한을 요청하고,
@@ -510,3 +517,14 @@ function createParticles() {
 
 // 페이지가 로드되면 파티클을 생성
 window.addEventListener('load', createParticles);
+
+
+// 파일 맨 아래에 새로운 함수 추가
+function goToMakeover() {
+    if (uploadedFilename && analyzedClusterId !== null) {
+        // 분석된 결과를 바탕으로 makeover 페이지로 이동
+        window.location.href = `/makeover?filename=${uploadedFilename}&cluster_num=${analyzedClusterId}`;
+    } else {
+        alert("먼저 이미지를 분석해주세요.");
+    }
+}
