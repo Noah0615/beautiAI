@@ -292,6 +292,12 @@ function signupUser() {
 /**
  * 로그인 처리
  */
+/**
+ * 로그인 처리
+ */
+/**
+ * 로그인 처리
+ */
 function loginUser() {
     const name = document.querySelector('#loginModal input[placeholder="아이디"]').value;
     const password = document.querySelector('#loginModal input[placeholder="비밀번호"]').value;
@@ -319,10 +325,25 @@ function loginUser() {
 
                 // 네비게이션 바에 프로필 버튼 추가
                 const nav = document.querySelector('nav ul');
+
+                // 로그인/회원가입 버튼 숨기기
+                document.querySelector('#loginNav').style.display = 'none';
+                document.querySelector('#signupNav').style.display = 'none';
+
+                // 프로필 버튼 추가 (중복 방지)
                 if (!document.querySelector('#profileNav')) {
                     const profileItem = document.createElement('li');
-                    profileItem.innerHTML = `<a href="#" id="profileNav" onclick="showProfile()">👤 ${user.name}</a>`;
+                    profileItem.id = 'profileNav'; // ID 부여
+                    profileItem.innerHTML = `<a href="#" onclick="showProfile()">👤 ${user.name}</a>`;
                     nav.appendChild(profileItem);
+                }
+
+                // 로그아웃 버튼 추가 (중복 방지)
+                if (!document.querySelector('#logoutNav')) {
+                    const logoutItem = document.createElement('li');
+                    logoutItem.id = 'logoutNav'; // ID 부여
+                    logoutItem.innerHTML = `<a href="#" onclick="logoutUser()">로그아웃</a>`;
+                    nav.appendChild(logoutItem);
                 }
 
                 alert('로그인 성공!');
@@ -336,6 +357,40 @@ function loginUser() {
             alert('로그인 중 오류가 발생했습니다.');
         });
 }
+
+/**
+ * 로그아웃 처리
+ */
+function logoutUser() {
+    fetch('/logout', {
+        method: 'POST',
+        credentials: 'include'
+    })
+        .then(response => {
+            if (response.ok) {
+                window.loggedInUser = null; // 전역 사용자 정보 초기화
+
+                // 로그인/회원가입 버튼 다시 보이기
+                document.querySelector('#loginNav').style.display = 'list-item';
+                document.querySelector('#signupNav').style.display = 'list-item';
+
+                // 프로필과 로그아웃 버튼 제거
+                document.querySelector('#profileNav')?.remove();
+                document.querySelector('#logoutNav')?.remove();
+
+                alert('로그아웃 되었습니다.');
+                showPage('home'); // 홈으로 이동
+            } else {
+                alert('로그아웃에 실패했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('Logout error:', error);
+            alert('로그아웃 중 오류가 발생했습니다.');
+        });
+}
+
+
 
 /**
  * 사용자 프로필 표시
