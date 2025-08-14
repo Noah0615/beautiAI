@@ -355,7 +355,9 @@ function showProfile() {
     `;
     document.getElementById('profileModal').style.display = 'block';
 }
-
+function closeProfile() {
+    document.getElementById('profileModal').style.display = 'none';
+}
 /******************************************************
  * 탭/시뮬레이션/공유 등 UI 유틸
  ******************************************************/
