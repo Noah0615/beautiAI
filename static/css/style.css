@@ -466,3 +466,36 @@ nav a:hover {
         transform: translateY(-20px) rotate(180deg);
     }
 }
+
+/* ========================================= */
+/* makeover.html 페이지 전용 스타일  */
+/* ========================================= */
+.palette-group {
+    display: flex;
+    padding: 5px;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.palette-group:hover {
+    transform: translateY(-2px);
+    border-color: #fecfef;
+}
+
+/* 현재 선택된 팔레트에 적용될 스타일 */
+.active-palette {
+    border-color: #ff6b9d;
+    box-shadow: 0 0 15px rgba(255, 107, 157, 0.5);
+}
+
+.palette-group .color-swatch {
+    width: 30px;
+    height: 30px;
+    margin: 0 3px;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
