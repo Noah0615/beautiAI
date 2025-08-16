@@ -142,9 +142,13 @@ async function startAnalysis() {
             <img src="${data.uploaded_image_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
         `;
 
+        analyzedClusterId = data.cluster_id;
+        uploadedFilename = data.uploaded_image_url.split('/').pop(); // URL에서 파일명 추출
+
         // 로딩 인터벌 정리 및 결과 페이지로 전환
         clearInterval(progressInterval);
         showPage('result');
+
 
     } catch (error) {
         console.error('Analysis failed:', error);
@@ -164,6 +168,9 @@ const modal = document.getElementById('webcamModal');
 const video = document.getElementById('webcamVideo');
 // getUserMedia로 얻는 MediaStream을 추후 정지하기 위해 저장
 let stream = null;
+
+let analyzedClusterId = null; // 분석된 클러스터 ID
+let uploadedFilename = null; // 업로드된 파일의 이름
 
 /**
  * 웹캠 열기: 사용자에게 카메라 접근 권한을 요청하고,
@@ -260,15 +267,28 @@ function closeProfileModal() {
  * 회원가입 처리
  */
 function signupUser() {
-    const name = document.querySelector('#signupModal input[placeholder="아이디"]').value;
-    const password = document.querySelector('#signupModal input[placeholder="비밀번호"]').value;
-    const email = document.querySelector('#signupModal input[placeholder="이메일"]').value;
+    const name = document.getElementById('signupName').value.trim();
+    const password = document.getElementById('signupPassword').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
     const sex = document.querySelector('#signupModal input[name="sex"]:checked')?.value;
 
+    // 유효성 검사 강화
     if (!name || !password || !email || !sex) {
         alert('모든 정보를 입력해주세요!');
         return;
     }
+
+    if (password.length < 4) {
+        alert('비밀번호는 4자 이상이어야 합니다.');
+        return;
+    }
+
+    if (!email.includes('@')) {
+        alert('올바른 이메일 형식을 입력해주세요.');
+        return;
+    }
+
+    console.log('회원가입 시도:', { name, email, sex });
 
     fetch('/signup', {
         method: 'POST',
@@ -276,30 +296,45 @@ function signupUser() {
         body: JSON.stringify({ name, email, password, sex })
     })
         .then(response => {
-            if (response.ok) {
+            console.log('회원가입 응답 상태:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('회원가입 응답 데이터:', data);
+            if (data.status === 'success') {
                 alert('회원가입 성공!');
                 closeSignupModal();
+                // 입력 필드 초기화
+                document.getElementById('signupName').value = '';
+                document.getElementById('signupPassword').value = '';
+                document.getElementById('signupEmail').value = '';
+                document.querySelector('#signupModal input[name="sex"]:checked').checked = false;
             } else {
-                alert('회원가입 실패!');
+                alert(data.message || '회원가입 실패!');
             }
         })
         .catch(error => {
-            console.error('Signup error:', error);
-            alert('오류가 발생했습니다.');
+            console.error('회원가입 오류:', error);
+            alert('서버 연결 오류가 발생했습니다. 나중에 다시 시도해주세요.');
         });
 }
+
+
 
 /**
  * 로그인 처리
  */
 function loginUser() {
-    const name = document.querySelector('#loginModal input[placeholder="아이디"]').value;
-    const password = document.querySelector('#loginModal input[placeholder="비밀번호"]').value;
+    console.log('✅ loginUser 함수가 성공적으로 호출되었습니다!'); // 이 라인을 추가!
+    const name = document.getElementById('loginName').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
 
     if (!name || !password) {
         alert("아이디와 비밀번호를 입력해주세요.");
         return;
     }
+
+    console.log('로그인 시도:', { name });
 
     fetch('/login', {
         method: 'POST',
@@ -308,34 +343,50 @@ function loginUser() {
         body: JSON.stringify({ name, password })
     })
         .then(response => {
-            if (!response.ok) throw new Error("로그인 실패");
-            return fetch('/me', { credentials: 'include' });
+            console.log('로그인 응답 상태:', response.status);
+            if (!response.ok) {
+                throw new Error("아이디 또는 비밀번호가 일치하지 않습니다.");
+            }
+            return response.json();
         })
-        .then(res => res.json())
         .then(data => {
-            if (data.status === 'success') {
-                const user = data.user;
-                window.loggedInUser = user;
-
-                // 네비게이션 바에 프로필 버튼 추가
-                const nav = document.querySelector('nav ul');
-                if (!document.querySelector('#profileNav')) {
-                    const profileItem = document.createElement('li');
-                    profileItem.innerHTML = `<a href="#" id="profileNav" onclick="showProfile()">👤 ${user.name}</a>`;
-                    nav.appendChild(profileItem);
-                }
-
+            console.log('로그인 응답 데이터:', data);
+            if (data.status === 'success' && data.user) {
                 alert('로그인 성공!');
-                closeLoginModal();
+                location.reload();
             } else {
-                alert('로그인 실패: 사용자 정보를 불러올 수 없습니다.');
+                throw new Error(data.message || '로그인에 실패했습니다.');
             }
         })
         .catch(error => {
-            console.error('Login error:', error);
-            alert('로그인 중 오류가 발생했습니다.');
+            console.error('로그인 오류:', error);
+            alert(error.message);
         });
 }
+
+/**
+ * 로그아웃 처리
+ */
+function logoutUser() {
+    fetch('/logout', {
+        method: 'POST',
+        credentials: 'include'
+    })
+        .then(response => {
+            if (response.ok) {
+                alert('로그아웃 되었습니다.');
+                location.reload();
+            } else {
+                alert('로그아웃에 실패했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('Logout error:', error);
+            alert('로그아웃 중 오류가 발생했습니다.');
+        });
+}
+
+
 
 /**
  * 사용자 프로필 표시
@@ -355,6 +406,9 @@ function showProfile() {
     `;
     document.getElementById('profileModal').style.display = 'block';
 }
+function closeProfile() {
+    document.getElementById('profileModal').style.display = 'none';
+}
 
 /******************************************************
  * 탭/시뮬레이션/공유 등 UI 유틸
@@ -364,13 +418,15 @@ function showProfile() {
  * - 현재 구현은 event 객체를 직접 사용하고 있어, 함수 시그니처를 switchTab(event, tabName)으로 바꾸는게 안전
  * - 또는 addEventListener 내부에서 화살표 함수로 event를 캡처하는 방식 추천
  */
-function switchTab(tabName) {
+function switchTab(event, tabName) {
     const buttons = document.querySelectorAll('.tab-button');
     buttons.forEach(btn => btn.classList.remove('active'));
 
-    // ⚠️ 아래 코드에서 event는 전역이 아님. 브라우저에 따라 동작하지 않을 수 있음.
-    // 안전하게 하려면 인자로 받은 event.currentTarget을 쓰도록 수정 필요.
-    event.target.classList.add('active');
+    // 클릭된 버튼을 활성화합니다.
+    // HTML의 onclick에서 event 객체를 전달해야 합니다. (예: onclick="switchTab(event, 'cosmetics')")
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
 
     // TODO: tabName에 따라 각기 다른 컬러 옵션 UI를 보여주는 로직 작성
 }
@@ -452,3 +508,15 @@ function createParticles() {
 
 // 페이지가 로드되면 파티클을 생성
 window.addEventListener('load', createParticles);
+
+
+
+// 파일 맨 아래에 새로운 함수 추가
+function goToMakeover() {
+    if (uploadedFilename && analyzedClusterId !== null) {
+        // 분석된 결과를 바탕으로 makeover 페이지로 이동
+        window.location.href = `/makeover?filename=${uploadedFilename}&cluster_num=${analyzedClusterId}`;
+    } else {
+        alert("먼저 이미지를 분석해주세요.");
+    }
+}
