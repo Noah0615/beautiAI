@@ -6,18 +6,17 @@
         <div class="result-grid">
             <div class="photo-container">
                 <h3>업로드한 사진</h3>
-                <div id="uploadedPhoto"
-                    style="width: 100%; height: auto; background: #f0f0f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #999;">
+                <div id="uploadedPhoto" class="uploaded-photo-placeholder">
                     사진이 여기에 표시됩니다
                 </div>
             </div>
             <div class="result-info">
                 <h3>당신의 타입은</h3>
-                <h2 style="color: #ff6b9d; font-size: 2rem; margin: 1rem 0;"></h2>
+                <h2 class="result-title"></h2>
                 <p></p>
                 <div class="color-palette">
                 </div>
-                <button class="cta-button" onclick="goToMakeover()" style="margin-top: 2rem;">
+                <button id="goToMakeoverBtn" class="cta-button">
                     🎨 가상 스타일링 체험하기
                 </button>
             </div>

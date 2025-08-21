@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>컬러 가이드 - AI 퍼스널 컬러 어드바이저</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="animated-bg">
+        {% include 'navigation.html' %}
+        <div id="guide" class="page-section active">
+            <div class="container" style="padding-top: 100px; text-align: center;">
+                <div class="hero-content">
+                    <h1>🎨 컬러 가이드</h1>
+                    <p class="subtitle">각 퍼스널 컬러 타입에 대한 상세 정보와 스타일링 팁을 확인해보세요.</p>
+                    <div class="description" style="text-align: left;">
+                        <p>이 페이지는 현재 준비 중입니다. 각 8가지 퍼스널 컬러 타입에 대한 자세한 설명, 어울리는 색상 팔레트, 메이크업 및 패션 스타일링 팁이 곧 추가될 예정입니다.</p>
+                        <br>
+                        <p><strong>예정 콘텐츠:</strong></p>
+                        <ul>
+                            <li>골든 타입 (Golden) 상세 분석</li>
+                            <li>웜 베이지 타입 (Warm Beige) 상세 분석</li>
+                            <li>쿨 로즈 타입 (Cool Rose) 상세 분석</li>
+                            <li>뮤트 클레이 타입 (Muted Clay) 상세 분석</li>
+                            <li>웜 애프리콧 타입 (Warm Apricot) 상세 분석</li>
+                            <li>피치 핑크 타입 (Peachy Pink) 상세 분석</li>
+                            <li>허니 버프 타입 (Honey Buff) 상세 분석</li>
+                            <li>베이지 로즈 타입 (Beige Rose) 상세 분석</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

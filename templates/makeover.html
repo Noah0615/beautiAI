@@ -5,74 +5,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>가상 스타일링 체험</title>
-    <!-- beautiAI의 기본 스타일만 사용합니다. -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        /* makeover.html 페이지에만 필요한 추가 스타일 */
-        .palette-group {
-            display: flex;
-            padding: 5px;
-            border-radius: 10px;
-            background-color: rgba(255, 255, 255, 0.7);
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .palette-group:hover {
-            border-color: #ff6b9d;
-            transform: translateY(-2px);
-        }
-
-        /* 기존 color-swatch를 그대로 사용하되, 크기만 살짝 조정합니다. */
-        .palette-group .color-swatch {
-            width: 30px;
-            height: 30px;
-            margin: 0 3px;
-        }
-    </style>
 </head>
 
 <body>
-    <!-- beautiAI의 배경과 네비게이션을 그대로 사용합니다. -->
     <div class="animated-bg">
         {% include 'navigation.html' %}
 
-        <div class="container"
-            style="padding-top: 100px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center;">
-            <div class="result-header">
-                <h2 style="font-size: 2.5rem;">가상 스타일링</h2>
-                <p style="font-size: 1.2rem; color: #666;">다른 컬러 팔레트를 클릭하여 새로운 스타일을 적용해보세요!</p>
+        <div class="container makeover-container">
+            <div class="result-header makeover-header">
+                <h2>가상 스타일링</h2>
+                <p>다른 컬러 팔레트를 클릭하여 새로운 스타일을 적용해보세요!</p>
+                <a href="{{ url_for('index') }}" class="cta-button">↩️ 홈으로 돌아가기</a>
             </div>
 
             {% if palettes %}
-            <!-- style.css의 .color-palette 클래스를 재사용하여 팔레트 버튼들을 가운데 정렬합니다. -->
-            <div class="color-palette" style="margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <div class="color-palette-container">
                 {% for i in range(palettes[selected_cluster]|length) %}
-                <!-- 팔레트 그룹을 a 태그로 감싸고, 위에서 정의한 전용 스타일을 적용합니다. -->
                 <a href="{{ url_for('makeover', filename=original_image, cluster_num=selected_cluster, palette_num=i) }}"
-                    class="palette-group">
-                    {% for color in palettes[selected_cluster][i] %}
-                    <!-- style.css의 .color-swatch 클래스를 재사용합니다. -->
-                    <div class="color-swatch" style="background-color: white;"></div>
-                    {% endfor %}
+                    class="palette-group {% if i == selected_palette %}active-palette{% endif %}">
+                    <div class="palette-preview">
+                        {% for color in palettes[selected_cluster][i] %}
+                        <div class="color-swatch" style="--swatch-color: {{ color }};"></div>
+                        {% endfor %}
+                    </div>
+                    <span>스타일 {{ loop.index }}</span>
                 </a>
                 {% endfor %}
             </div>
             {% endif %}
 
-            <!-- style.css의 .result-grid와 .photo-container 클래스를 재사용하여 레이아웃을 통일합니다. -->
-            <div class="result-grid">
-                <div class="photo-container">
+            <div class="makeover-grid">
+                <div class="makeover-photo-container">
                     <h3>원본 사진</h3>
-                    <img src="{{ url_for('uploaded_file', filename=original_image) }}"
-                        style="width: 100%; border-radius: 10px;">
+                    <img src="{{ url_for('uploaded_file', filename=original_image) }}" class="user-image-display">
                 </div>
-                <div class="photo-container">
+                <div class="makeover-photo-container">
                     <h3>스타일링 적용</h3>
-                    <img src="{{ url_for('uploaded_file', filename=result_image) }}"
-                        style="width: 100%; border-radius: 10px;">
+                    <img src="{{ url_for('uploaded_file', filename=result_image) }}" class="user-image-display">
                 </div>
             </div>
         </div>

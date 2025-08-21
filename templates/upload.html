@@ -5,15 +5,13 @@
             <p style="font-size: 1.2rem; color: #666; margin-bottom: 2rem;">정확한 진단을 위해 좋은 품질의 사진을 업로드해주세요</p>
 
             <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <div class="upload-area" style="flex: 1; min-width: 250px;"
-                    onclick="document.getElementById('fileInput').click()">
+                <div class="upload-area upload-area-file" style="flex: 1; min-width: 250px;">
                     <div class="upload-icon">📁</div>
                     <h4>파일에서 선택</h4>
                     <p style="font-size: 0.9rem;">클릭하거나 파일을 드래그</p>
-                    <input type="file" id="fileInput" accept="image/*" style="display: none;"
-                        onchange="handleFileSelect(event)">
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
                 </div>
-                <div class="upload-area" style="flex: 1; min-width: 250px;" onclick="openWebcam()">
+                <div class="upload-area upload-area-webcam" style="flex: 1; min-width: 250px;">
                     <div class="upload-icon">📸</div>
                     <h4>카메라로 촬영</h4>
                     <p style="font-size: 0.9rem;">실시간으로 사진 찍기</p>
@@ -45,7 +43,7 @@
                 </div>
             </div>
 
-            <button id="analyzeBtn" class="cta-button" style="display: none;" onclick="startAnalysis()">
+            <button id="analyzeBtn" class="cta-button" style="display: none;">
                 🔍 분석하기
             </button>
         </div>
