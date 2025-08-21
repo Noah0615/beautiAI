@@ -297,6 +297,54 @@ function updateNav(user) {
 }
 
 /******************************************************
+ * 리포트 다운로드
+ ******************************************************/
+async function downloadReport() {
+    const container = document.querySelector('.makeover-container');
+    if (!container) return;
+
+    const original_image = container.dataset.originalImage;
+    const result_image = container.dataset.resultImage;
+    const cluster_num = parseInt(container.dataset.clusterNum, 10);
+
+    if (!original_image || !result_image || isNaN(cluster_num)) {
+        return showNotification('리포트 생성에 필요한 정보가 부족합니다.', 'error');
+    }
+
+    showNotification('리포트 PDF를 생성하고 있습니다... 잠시만 기다려주세요.', 'info');
+
+    try {
+        const response = await fetch('/download_report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ original_image, result_image, cluster_num })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'PDF 생성 중 서버에서 오류가 발생했습니다.' }));
+            throw new Error(errorData.message);
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `Personal_Color_Report_${original_image.split('.')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+
+        showNotification('PDF 리포트 다운로드가 시작되었습니다.', 'success');
+
+    } catch (error) {
+        console.error('Report download failed:', error);
+        showNotification(error.message, 'error');
+    }
+}
+
+/******************************************************
  * 기타 UI 및 초기화
  ******************************************************/
 function goToMakeover() {
@@ -375,6 +423,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (target.closest('#goToMakeoverBtn')) {
             goToMakeover();
+        }
+        if (target.closest('#downloadReportBtn')) {
+            downloadReport();
         }
         if (target.closest('.upload-area-file')) {
             document.getElementById('fileInput').click();
