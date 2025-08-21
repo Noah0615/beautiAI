@@ -250,7 +250,7 @@ function logoutUser() {
         if (data.status === 'success') {
             showNotification('로그아웃 되었습니다.', 'info');
             updateNav(null);
-            showPage('home');
+            window.location.href = '/';
         } else {
             showNotification('로그아웃에 실패했습니다.', 'error');
         }
@@ -327,7 +327,19 @@ function createParticles() {
 document.addEventListener('DOMContentLoaded', () => {
     createParticles();
     checkLoginStatus();
-    showPage('home');
+
+    const isMakeoverPage = !!document.querySelector('.makeover-container');
+
+    if (isMakeoverPage) {
+        // makeover.html: 네비게이션 링크를 절대 경로로 수정
+        document.querySelectorAll('nav a[data-page]').forEach(link => {
+            link.href = `/?page=${link.dataset.page}`;
+        });
+    } else {
+        // index.html: 초기 페이지 설정
+        const initialPage = document.body.dataset.initialPage || 'home';
+        showPage(initialPage);
+    }
 
     // 전역 이벤트 위임 (Event Delegation)
     document.body.addEventListener('click', e => {
@@ -336,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const modalLink = target.closest('[data-modal]');
         const closeModalBtn = target.closest('.close-button');
 
-        if (pageLink) {
+        if (pageLink && !isMakeoverPage) { // index.html에서만 SPA처럼 동작
             e.preventDefault();
             const pageId = pageLink.dataset.page;
             if (pageId === 'upload' && !window.loggedInUser) {
@@ -346,6 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showPage(pageId);
             }
         }
+        
         if (modalLink) {
             e.preventDefault();
             controlModal(modalLink.dataset.modal, true);
