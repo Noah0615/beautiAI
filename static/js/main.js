@@ -250,6 +250,7 @@ function logoutUser() {
         if (data.status === 'success') {
             showNotification('로그아웃 되었습니다.', 'info');
             updateNav(null);
+            showPage('home');
         } else {
             showNotification('로그아웃에 실패했습니다.', 'error');
         }
@@ -337,7 +338,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (pageLink) {
             e.preventDefault();
-            showPage(pageLink.dataset.page);
+            const pageId = pageLink.dataset.page;
+            if (pageId === 'upload' && !window.loggedInUser) {
+                showNotification('로그인이 필요한 서비스입니다.', 'info');
+                controlModal('loginModal', true);
+            } else {
+                showPage(pageId);
+            }
         }
         if (modalLink) {
             e.preventDefault();
