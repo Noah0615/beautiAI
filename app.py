@@ -588,7 +588,9 @@ def get_profile():
 # ==============================================================================
 if __name__ == '__main__':
     load_models()
-    
+    UPLOAD_FOLDER = 'uploads'
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
     print("=" * 70)
     print(f"🚀 Enhanced Personal Color & Makeover Server Starting...")
     print(f"📱 Model Status: {'✅ Loaded' if models_loaded else '❌ Failed'}")
