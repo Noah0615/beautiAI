@@ -1,14 +1,14 @@
 import os
 import traceback
 import torch
-from PIL import Image
+from PIL import Image, ImageFont
 import cv2
 import numpy as np
 import joblib
 import facer
 from fb import get_db
 from sklearn.cluster import KMeans
-from flask import Flask, request, jsonify, render_template, send_from_directory, session
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, send_file
 from werkzeug.utils import secure_filename
 import base64
 from io import BytesIO
@@ -19,6 +19,8 @@ from scipy import ndimage
 from skimage import exposure, color
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# PDF 관련 라이브러리
+from fpdf import FPDF
 
 # 가상 메이크업 기능에 필요한 import
 from torchvision import transforms
@@ -64,8 +66,8 @@ CLUSTER_DESCRIPTIONS = {
 MAKEOVER_PALETTES = {
     # 0: Golden
     0: [
-        ["#D9A882", "#A2DADA", "#F68B8B", "#F5E7C3"],  # Style 1 (Natural)
-        ["#5D4B40", "#7F9C92", "#C45A5A", "#A7B6B4"],  # Style 2 (Smokey)
+        ["#A3894C", "#4C99A3", "#A34C7D", "#95A34C"],  # Style 1 (Natural)
+        ["#A34C4C", "#7F9C92", "#C45A5A", "#A7B6B4"],  # Style 2 (Smokey)
         ["#8A3500", "#33A399", "#D1256A", "#512525"]   # Style 3 (Vibrant)
     ],
     # 1: Warm Beige
@@ -100,17 +102,18 @@ MAKEOVER_PALETTES = {
     ],
     # 6: Honey Buff
     6: [
-        ["#A9746E", "#C7D3D4", "#D87070", "#E9CFCF"],  # Style 1 (Natural)
-        ["#2A252F", "#5C7A86", "#A32E31", "#3A565A"],  # Style 2 (Smokey)
-        ["#DAA520", "#4682B4", "#CD5C5C", "#6B8E23"]   # Style 3 (Bold)
+        ["#825F4E", "#567591", "#B56B81", "#FFECA1"],  # Style 1 (Natural)
+        ["#994E63", "#0C4D1E", "#D16A5A", "#B0D9D8"],  # Style 2 (Smokey)
+        ["#944D64", "#3BA6FD", "#CD5C8F", "#B0D9D8"]   # Style 3 (Bold)
     ],
     # 7: Beige Rose
     7: [
-        ["#DDC2B4", "#BCA69A", "#D99A9A", "#EBD5C8"],  # Style 1 (Natural)
+        ["#DDC2B4", "#BCA69A", "#D99A9A", "#B0D9D8"],  # Style 1 (Natural)
         ["#B17B78", "#C9D5D5", "#D97474", "#EBCFCF"],  # Style 2 (Soft Rose)
         ["#6A5ACD", "#20B2AA", "#F08080", "#3A565A"]   # Style 3 (Royal)
     ]
 }
+
 
 # AI 모델 관련 전역 변수 초기화
 kmeans_model = None
@@ -132,6 +135,90 @@ def hex_to_bgr(hex_color):
     g = int(hex_color[2:4],16)
     b = int(hex_color[4:6],16)
     return [b,g,r]
+
+# ==============================================================================
+# PDF 관련 헬퍼 함수
+# ==============================================================================
+class PDF(FPDF):
+    def header(self):
+        # 중요: static/fonts/ 폴더에 한글 지원 폰트(예: NanumGothic.ttf)가 있어야 합니다.
+        try:
+            self.add_font('NanumGothic', '', 'static/fonts/NanumGothic.ttf', uni=True)
+            self.set_font('NanumGothic', '', 15)
+        except RuntimeError:
+            print("WARNING: NanumGothic.ttf 폰트를 찾을 수 없습니다. 기본 폰트로 대체합니다.")
+            self.set_font('Arial', '', 15)
+        self.cell(0, 10, 'AI Personal Color Report', 0, 1, 'C')
+        self.ln(10)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+
+    def chapter_title(self, title):
+        self.set_font(self.font_family, '', 12)
+        self.cell(0, 10, title, 0, 1, 'L')
+        self.ln(5)
+
+    def chapter_body(self, body):
+        self.set_font(self.font_family, '', 10)
+        self.multi_cell(0, 5, body)
+        self.ln()
+
+    def add_color_palette(self, palette):
+        self.set_font(self.font_family, '', 10)
+        self.cell(0, 10, 'Recommended Color Palette:', 0, 1)
+        x_start, y_start = self.get_x(), self.get_y()
+        box_size = 20
+        for color_hex in palette:
+            r, g, b = tuple(int(color_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+            self.set_fill_color(r, g, b)
+            self.rect(self.get_x(), self.get_y(), box_size, box_size, 'F')
+            self.set_xy(self.get_x() + box_size + 2, self.get_y() + box_size / 2 - 2)
+            self.cell(0, 5, color_hex)
+            self.set_xy(x_start, self.get_y() + box_size + 5)
+        self.set_xy(x_start, y_start + len(palette) * (box_size + 5) + 5)
+
+def generate_report_pdf(original_image_path, result_image_path, cluster_info):
+    pdf = PDF()
+    pdf.add_page()
+    
+    # 진단 결과
+    pdf.chapter_title(f"Your Type: {cluster_info['visual_name']}")
+    pdf.chapter_body(cluster_info['description'])
+    
+    # 추천 팔레트
+    pdf.add_color_palette(cluster_info['palette'])
+    pdf.ln(10)
+
+    # 이미지
+    pdf.chapter_title('Your Images')
+    
+    max_width = 80
+    try:
+        img_orig = Image.open(original_image_path)
+        img_result = Image.open(result_image_path)
+        
+        w_orig, h_orig = img_orig.size
+        w_res, h_res = img_result.size
+        
+        w_orig_new = max_width
+        h_orig_new = h_orig * w_orig_new / w_orig
+        
+        w_res_new = max_width
+        h_res_new = h_res * w_res_new / w_res
+
+        pdf.image(original_image_path, x=pdf.get_x(), y=pdf.get_y(), w=w_orig_new)
+        pdf.set_x(pdf.get_x() + max_width + 10)
+        pdf.image(result_image_path, x=pdf.get_x(), y=pdf.get_y(), w=w_res_new)
+    except Exception as e:
+        pdf.chapter_body(f"Error loading images: {e}")
+    
+    pdf_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"report_{os.path.basename(original_image_path)}.pdf")
+    pdf.output(pdf_file_path)
+    return pdf_file_path
+
 # ==============================================================================
 # 고급 조명 보정 함수들 (기존과 동일)
 # ==============================================================================
@@ -428,27 +515,30 @@ def makeover():
     hair_color = hex_to_bgr(selected_palette[0])
     lens_color = hex_to_bgr(selected_palette[1])
     lip_color = hex_to_bgr(selected_palette[2])
+    clothes_color = hex_to_bgr(selected_palette[3])
 
+    # 사용자 성별 정보 가져오기
     user_sex = None
-    if session.get('user'):
+    if session.get('user') and 'email' in session['user']:
         try:
             db = get_db()
-            users = db.collection('users')
-            user_email = session['user']['email']
-            user_doc = users.document(user_email).get()
+            user_doc = db.collection('users').document(session['user']['email']).get()
             if user_doc.exists:
-                user_data = user_doc.to_dict()
-                user_sex = user_data.get('sex', '').lower()
+                user_sex = user_doc.to_dict().get('sex', '').lower()
         except Exception as e:
-            print(f"Error fetching user sex: {e}")
+            print(f"Error fetching user sex from Firestore: {e}")
+
     # 메이크업 적용
-    img_makeup = hair(img_bgr, parsing_resized, 17, hair_color)      # 헤어
+    img_makeup = hair(img_bgr, parsing_resized, 17, hair_color) # 헤어
+    img_makeup = hair(img_makeup, parsing_resized, 16, clothes_color)  # 옷
     if user_sex != 'male':
         img_makeup = hair(img_makeup, parsing_resized, 12, lip_color)    # 윗입술
         img_makeup = hair(img_makeup, parsing_resized, 13, lip_color)    # 아랫입술
+    
     # 렌즈는 hair 함수를 재사용하되, 다른 파트 번호와 색상을 전달
     img_makeup = hair(img_makeup, parsing_resized, 4, lens_color)    # 왼쪽 눈
     img_makeup = hair(img_makeup, parsing_resized, 5, lens_color)    # 오른쪽 눈
+    
 
     # 결과 이미지 저장
     result_filename = f"makeover_{palette_num}_{filename}"
@@ -462,6 +552,34 @@ def makeover():
                            selected_cluster=cluster_num,
                            selected_palette=palette_num,
                            user=session.get('user'))
+
+@app.route('/download_report', methods=['POST'])
+def download_report():
+    """결과 리포트 PDF를 생성하고 다운로드하는 라우트"""
+    data = request.get_json()
+    original_image = data.get('original_image')
+    result_image = data.get('result_image')
+    cluster_num = data.get('cluster_num')
+
+    if not all([original_image, result_image, cluster_num is not None]):
+        return jsonify({'status': 'error', 'message': '필수 정보가 누락되었습니다.'}), 400
+
+    try:
+        cluster_info = get_cluster_info(cluster_num)
+        original_image_path = os.path.join(app.config['UPLOAD_FOLDER'], original_image)
+        result_image_path = os.path.join(app.config['UPLOAD_FOLDER'], result_image)
+
+        # PDF 생성
+        pdf_path = generate_report_pdf(original_image_path, result_image_path, cluster_info)
+
+        return send_file(pdf_path, as_attachment=True)
+
+    except FileNotFoundError as e:
+        traceback.print_exc()
+        return jsonify({'status': 'error', 'message': f'파일을 찾을 수 없습니다: {e}'}), 404
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'status': 'error', 'message': f'리포트 생성 중 오류 발생: {str(e)}'}), 500
 
 
 @app.route('/uploads/<filename>')
@@ -588,9 +706,7 @@ def get_profile():
 # ==============================================================================
 if __name__ == '__main__':
     load_models()
-    UPLOAD_FOLDER = 'uploads'
-    if not os.path.exists(UPLOAD_FOLDER):
-        os.makedirs(UPLOAD_FOLDER)
+    
     print("=" * 70)
     print(f"🚀 Enhanced Personal Color & Makeover Server Starting...")
     print(f"📱 Model Status: {'✅ Loaded' if models_loaded else '❌ Failed'}")
