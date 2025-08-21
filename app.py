@@ -429,10 +429,23 @@ def makeover():
     lens_color = hex_to_bgr(selected_palette[1])
     lip_color = hex_to_bgr(selected_palette[2])
 
+    user_sex = None
+    if session.get('user'):
+        try:
+            db = get_db()
+            users = db.collection('users')
+            user_email = session['user']['email']
+            user_doc = users.document(user_email).get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
+                user_sex = user_data.get('sex', '').lower()
+        except Exception as e:
+            print(f"Error fetching user sex: {e}")
     # 메이크업 적용
     img_makeup = hair(img_bgr, parsing_resized, 17, hair_color)      # 헤어
-    img_makeup = hair(img_makeup, parsing_resized, 12, lip_color)    # 윗입술
-    img_makeup = hair(img_makeup, parsing_resized, 13, lip_color)    # 아랫입술
+    if user_sex != 'male':
+        img_makeup = hair(img_makeup, parsing_resized, 12, lip_color)    # 윗입술
+        img_makeup = hair(img_makeup, parsing_resized, 13, lip_color)    # 아랫입술
     # 렌즈는 hair 함수를 재사용하되, 다른 파트 번호와 색상을 전달
     img_makeup = hair(img_makeup, parsing_resized, 4, lens_color)    # 왼쪽 눈
     img_makeup = hair(img_makeup, parsing_resized, 5, lens_color)    # 오른쪽 눈
