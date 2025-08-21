@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
-<body>
+<body data-initial-page="{{ initial_page|default('home') }}">
     <div id="notification-container"></div>
     <div class="animated-bg">
         {% include 'navigation.html' %}
