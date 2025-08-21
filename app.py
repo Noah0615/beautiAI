@@ -517,34 +517,32 @@ def login():
         return jsonify({'status': 'error', 'message': 'Invalid name or password'}), 401
 
     stored_password = user_data.get('password', '')
-    password_match = False
-
-    if stored_password.startswith('pbkdf2:sha256$'):
-        if check_password_hash(stored_password, password):
-            password_match = True
-    else:
-        if stored_password == password:
-            password_match = True
+    
+    # Use check_password_hash directly. It safely handles non-hashed strings by returning False.
+    # Then, check for plaintext password for legacy support.
+    if check_password_hash(stored_password, password) or stored_password == password:
+        # If it was a plaintext password, hash it and update the DB.
+        if not stored_password.startswith('pbkdf2:sha256') and stored_password == password:
             try:
                 new_hashed_password = generate_password_hash(password)
-                # Simplified and more robust update logic
                 users.document(user_doc.id).update({'password': new_hashed_password})
                 print(f"Password for user {user_data['name']} has been securely hashed.")
             except Exception as e:
                 print(f"Error updating password for user {user_data['name']}: {e}")
+        
+        # If we are here, the password is correct.
+        user_session_data = {
+            'name': user_data.get('name'),
+            'email': user_data.get('email'),
+            'sex': user_data.get('sex'),
+            'image': None if not user_data.get('image') else f"/user_image/{user_data.get('name')}"
+        }
+        session['user'] = user_session_data
+        
+        return jsonify({'status': 'success', 'user': user_session_data}), 200
 
-    if not password_match:
-        return jsonify({'status': 'error', 'message': 'Invalid name or password'}), 401
-
-    user_session_data = {
-        'name': user_data.get('name'),
-        'email': user_data.get('email'),
-        'sex': user_data.get('sex'),
-        'image': None if not user_data.get('image') else f"/user_image/{user_data.get('name')}"
-    }
-    session['user'] = user_session_data
-    
-    return jsonify({'status': 'success', 'user': user_session_data}), 200
+    # If both checks fail, the password is wrong.
+    return jsonify({'status': 'error', 'message': 'Invalid name or password'}), 401
 
 @app.route('/logout', methods=['POST'])
 def logout():
