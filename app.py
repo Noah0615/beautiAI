@@ -336,7 +336,8 @@ def get_cluster_info(cluster_id):
 @app.route('/')
 def index():
     """메인 페이지를 렌더링하는 라우트"""
-    return render_template('index.html', user=session.get('user'))
+    page = request.args.get('page', 'home')
+    return render_template('index.html', user=session.get('user'), initial_page=page)
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
