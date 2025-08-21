@@ -286,10 +286,15 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-def extract_facial_part_colors(image: Image.Image, n_colors_per_part=7, apply_lighting_correction=True):
+def extract_facial_part_colors(image: Image.Image, n_colors_per_part=7, apply_lighting_correction=True, is_camera_input=False):
     """얼굴에서 피부 색상 특징(Lab 색공간)을 추출하는 핵심 함수 (조명 보정 포함)"""
     try:
         image_np = np.array(image)
+        
+        # 카메라 입력의 경우 노이즈 감소를 위해 양방향 필터 적용
+        if is_camera_input:
+            image_np = cv2.bilateralFilter(image_np, d=9, sigmaColor=75, sigmaSpace=75)
+
         correction_log = []
         if apply_lighting_correction:
             image_np, correction_log = comprehensive_lighting_correction(image_np)
@@ -336,11 +341,15 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     """이미지 분석을 수행하는 메인 API 엔드포인트"""
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요한 서비스입니다.'}), 401
+
     if not models_loaded:
         return jsonify({'error': 'AI 모델이 로드되지 않았습니다.'}), 503
 
     try:
         image = None
+        is_camera_input = False
         filename = f"upload_{np.datetime64('now').astype(int)}.jpg"
         apply_correction = request.form.get('apply_lighting_correction', 'true').lower() == 'true'
         
@@ -350,6 +359,7 @@ def analyze():
                 return jsonify({'error': '잘못된 파일입니다.'}), 400
             image = Image.open(file.stream).convert('RGB')
         elif request.json and 'image_data' in request.json:
+            is_camera_input = True
             image_data = request.json['image_data'].split(',')[1]
             image = Image.open(BytesIO(base64.b64decode(image_data))).convert('RGB')
             apply_correction = request.json.get('apply_lighting_correction', True)
@@ -357,7 +367,10 @@ def analyze():
             return jsonify({'error': '이미지 파일 또는 데이터가 필요합니다.'}), 400
 
         lab_features, error_msg, correction_log = extract_facial_part_colors(
-            image, n_colors_per_part=N_REPRESENTATIVE_COLORS, apply_lighting_correction=apply_correction
+            image,
+            n_colors_per_part=N_REPRESENTATIVE_COLORS,
+            apply_lighting_correction=apply_correction,
+            is_camera_input=is_camera_input
         )
         
         if error_msg:
