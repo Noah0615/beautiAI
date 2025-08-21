@@ -1,26 +1,51 @@
 /******************************************************
  * 전역 상태
  ******************************************************/
-// 업로드/촬영된 이미지를 서버로 보낼 때 사용할 전역 변수
 let fileForAnalysis = null;
-
-// 로그인된 사용자 정보를 저장할 전역 변수
+let analyzedClusterId = null;
+let uploadedFilename = null;
 window.loggedInUser = null;
+
+/******************************************************
+ * UI 유틸리티
+ ******************************************************/
+
+function showNotification(message, type = 'info') {
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    container.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 500);
+    }, 3000);
+}
+
+function controlModal(modalId, show) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = show ? 'block' : 'none';
+    }
+}
 
 /******************************************************
  * 페이지 전환 관련
  ******************************************************/
-/**
- * id가 pageId인 섹션을 보여주고, 나머지는 숨김
- * 또한 업로드 페이지에서 벗어날 때는 웹캠을 중지
- */
 function showPage(pageId) {
-    const pages = document.querySelectorAll('.page-section');
-    pages.forEach(page => page.classList.remove('active'));
-    document.getElementById(pageId).classList.add('active');
+    document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
+    const newPage = document.getElementById(pageId);
+    if (newPage) {
+        newPage.classList.add('active');
+    } else {
+        console.warn(`Page with id '${pageId}' not found. Returning to home.`);
+        document.getElementById('home').classList.add('active');
+    }
 
-    // 업로드 페이지가 아닐 경우 웹캠 스트림 종료
-    if (pageId !== 'upload') {
+    if (document.getElementById('webcamModal').style.display === 'block') {
         closeWebcam();
     }
 }
@@ -28,10 +53,6 @@ function showPage(pageId) {
 /******************************************************
  * 파일 업로드 처리
  ******************************************************/
-/**
- * <input type="file">의 change 이벤트 핸들러
- * 사용자가 실제로 선택한 첫 번째 파일을 displayAndSetFile로 전달
- */
 function handleFileSelect(event) {
     const file = event.target.files[0];
     if (file) {
@@ -39,56 +60,25 @@ function handleFileSelect(event) {
     }
 }
 
-/**
- * 공통 로직: 전달받은 파일을
- * 1) 전역 변수에 저장하고
- * 2) 업로드 화면과 결과 화면에 미리보기 이미지를 렌더링하며
- * 3) "분석 시작" 버튼을 보이도록 설정
- */
 function displayAndSetFile(file) {
     fileForAnalysis = file;
-
     const reader = new FileReader();
     reader.onload = function (e) {
-        // 업로드 페이지의 프리뷰에 표시
-        const previewContainer = document.getElementById('uploadPreview');
-        previewContainer.innerHTML = `
-            <img src="${e.target.result}" style="max-width: 100%; max-height: 200px; border-radius: 10px; margin-top: 1rem;">
-        `;
-
-        // 결과 페이지에도 동일 이미지를 미리 깔아둠(로딩 후 서버 URL로 교체될 수 있음)
-        document.getElementById('uploadedPhoto').innerHTML = `
-            <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
-        `;
+        const imgPreview = `<img src="${e.target.result}" class="user-image-display">`;
+        document.getElementById('uploadPreview').innerHTML = imgPreview;
+        document.getElementById('uploadedPhoto').innerHTML = `<img src="${e.target.result}" class="user-image-display">`;
     };
-    // 파일을 Base64 DataURL로 읽어와서 미리보기에 사용
     reader.readAsDataURL(file);
-
-    // 파일이 선택되면 분석 버튼을 노출
     document.getElementById('analyzeBtn').style.display = 'inline-block';
 }
 
 /******************************************************
  * 분석 시작 (백엔드와 통신)
  ******************************************************/
-/**
- * 파일이 준비되었는지 확인하고,
- * 로딩 페이지로 전환하면서 단계별 애니메이션을 보여준 후
- * /analyze 엔드포인트로 FormData를 POST.
- * 성공 시 결과 화면을 업데이트하고 페이지 전환.
- */
 async function startAnalysis() {
-    // 파일이 없으면 사용자에게 알림
     if (!fileForAnalysis) {
-        alert("먼저 사진을 선택하거나 촬영해주세요.");
-        return;
+        return showNotification("먼저 사진을 선택하거나 촬영해주세요.", "error");
     }
-
-    // 이전에 활성화된 모든 로딩 단계를 재설정
-    const allSteps = document.querySelectorAll('.loading-step');
-    allSteps.forEach(step => step.classList.remove('active'));
-
-    // 로딩 화면으로 이동
     showPage('loading');
 
     // 로딩 단계 애니메이션 (step1~step4 순차 활성화)
@@ -96,40 +86,32 @@ async function startAnalysis() {
     let currentStep = 0;
     const progressInterval = setInterval(() => {
         if (currentStep < steps.length) {
-            document.getElementById(steps[currentStep]).classList.add('active');
+            const stepEl = document.getElementById(steps[currentStep]);
+            if(stepEl) stepEl.classList.add('active');
             currentStep++;
         } else {
             clearInterval(progressInterval);
         }
-    }, 1000);
+    }, 800);
 
-    // 서버로 전송할 폼 데이터 구성
     const formData = new FormData();
     formData.append('file', fileForAnalysis);
 
     try {
-        // 백엔드 호출
         const response = await fetch('/analyze', {
             method: 'POST',
             body: formData
         });
-
-        // HTTP 에러 핸들링
+        const data = await response.json();
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(data.error || `HTTP error! status: ${response.status}`);
         }
 
-        // JSON 파싱
-        const data = await response.json();
-
-        // ----- 결과 페이지 구성 -----
-        // 1) 타입명 + 설명
-        document.querySelector('#result .result-info h2').textContent = `${data.personal_color_type} ✨`;
+        document.querySelector('#result .result-info h2').textContent = `${data.visual_name} ✨`;
         document.querySelector('#result .result-info p').textContent = data.type_description;
 
-        // 2) 팔레트 스와치 채우기
         const paletteContainer = document.querySelector('#result .color-palette');
-        paletteContainer.innerHTML = ''; // 기존 스와치 제거
+        paletteContainer.innerHTML = '';
         data.palette.forEach(color => {
             const swatch = document.createElement('div');
             swatch.className = 'color-swatch';
@@ -137,25 +119,17 @@ async function startAnalysis() {
             paletteContainer.appendChild(swatch);
         });
 
-        // 3) 서버가 반환한 최종 업로드 이미지 URL로 교체
-        document.getElementById('uploadedPhoto').innerHTML = `
-            <img src="${data.uploaded_image_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
-        `;
-
+        document.getElementById('uploadedPhoto').innerHTML = `<img src="${data.uploaded_image_url}" class="user-image-display">`;
         analyzedClusterId = data.cluster_id;
-        uploadedFilename = data.uploaded_image_url.split('/').pop(); // URL에서 파일명 추출
-
-        // 로딩 인터벌 정리 및 결과 페이지로 전환
-        clearInterval(progressInterval);
+        uploadedFilename = data.uploaded_image_url.split('/').pop();
+        
+        clearInterval(progressInterval); // Clear interval on success
         showPage('result');
 
-
     } catch (error) {
+        clearInterval(progressInterval); // Clear interval on error
         console.error('Analysis failed:', error);
-        alert('분석에 실패했습니다. 다시 시도해주세요.');
-
-        // 인터벌 정리 및 업로드 페이지로 복귀
-        clearInterval(progressInterval);
+        showNotification(error.message || '분석에 실패했습니다. 다시 시도해주세요.', 'error');
         showPage('upload');
     }
 }
@@ -163,156 +137,85 @@ async function startAnalysis() {
 /******************************************************
  * 웹캠 관련
  ******************************************************/
-// 모달/비디오 요소 (전역에서 재사용)
-const modal = document.getElementById('webcamModal');
-const video = document.getElementById('webcamVideo');
-// getUserMedia로 얻는 MediaStream을 추후 정지하기 위해 저장
 let stream = null;
+const video = document.getElementById('webcamVideo');
 
-let analyzedClusterId = null; // 분석된 클러스터 ID
-let uploadedFilename = null; // 업로드된 파일의 이름
-
-/**
- * 웹캠 열기: 사용자에게 카메라 접근 권한을 요청하고,
- * 비디오 요소에 스트림을 연결, 모달 표시
- */
 async function openWebcam() {
     try {
-        // 카메라 권한 요청 및 스트림 획득
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('카메라 API를 사용할 수 없는 브라우저입니다.');
+        }
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
-        modal.style.display = 'block';
+        controlModal('webcamModal', true);
     } catch (err) {
         console.error("Error accessing webcam: ", err);
-        alert("카메라에 접근할 수 없습니다. 브라우저 설정을 확인해주세요.");
+        showNotification(err.message || "카메라에 접근할 수 없습니다. 브라우저 설정을 확인해주세요.", "error");
     }
 }
 
-/**
- * 웹캠 닫기: 모든 트랙을 stop()하여 카메라 해제,
- * 모달 숨김
- */
 function closeWebcam() {
     if (stream) {
         stream.getTracks().forEach(track => track.stop());
+        stream = null;
     }
-    modal.style.display = 'none';
+    controlModal('webcamModal', false);
 }
 
-/**
- * 현재 비디오 프레임을 캡처하여 Blob -> File로 만들고
- * displayAndSetFile 호출(즉, 일반 업로드와 동일한 플로우로 처리)
- */
 function takeSnapshot() {
-    // 비디오 프레임 해상도대로 캔버스 생성
+    if (!video.srcObject) return;
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-
-    const context = canvas.getContext('2d');
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    // 웹캠 종료
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
     closeWebcam();
-
-    // 캔버스를 JPEG Blob으로 변환 후 File 객체 생성
-    canvas.toBlob(function (blob) {
-        const timestamp = new Date().getTime();
-        const snapshotFile = new File([blob], `snapshot_${timestamp}.jpg`, { type: 'image/jpeg' });
-
-        // 업로드된 파일과 동일한 경로로 처리
+    canvas.toBlob(blob => {
+        const snapshotFile = new File([blob], `snapshot_${new Date().getTime()}.jpg`, { type: 'image/jpeg' });
         displayAndSetFile(snapshotFile);
     }, 'image/jpeg');
 }
 
 /******************************************************
- * 로그인/회원가입 모달 관련
+ * 인증 관련 (로그인/회원가입/프로필)
  ******************************************************/
-/**
- * 로그인 모달 표시
- */
-function showLoginModal() {
-    document.getElementById('loginModal').style.display = 'block';
-}
-
-/**
- * 로그인 모달 닫기
- */
-function closeLoginModal() {
-    document.getElementById('loginModal').style.display = 'none';
-}
-
-/**
- * 회원가입 모달 표시
- */
-function showSignupModal() {
-    document.getElementById('signupModal').style.display = 'block';
-}
-
-/**
- * 회원가입 모달 닫기
- */
-function closeSignupModal() {
-    document.getElementById('signupModal').style.display = 'none';
-}
-
-/**
- * 프로필 모달 닫기
- */
-function closeProfileModal() {
-    document.getElementById('profileModal').style.display = 'none';
-}
-
-/**
- * 회원가입 처리
- */
 function signupUser() {
-    const name = document.querySelector('#signupModal input[placeholder="아이디"]').value;
-    const password = document.querySelector('#signupModal input[placeholder="비밀번호"]').value;
-    const email = document.querySelector('#signupModal input[placeholder="이메일"]').value;
-    const sex = document.querySelector('#signupModal input[name="sex"]:checked')?.value;
+    const form = document.getElementById('signupForm');
+    const name = form.elements.signupName.value.trim();
+    const password = form.elements.signupPassword.value.trim();
+    const email = form.elements.signupEmail.value.trim();
+    const sex = form.elements.sex.value;
 
-    if (!name || !password || !email || !sex) {
-        alert('모든 정보를 입력해주세요!');
-        return;
-    }
+    if (!name || !password || !email || !sex) return showNotification('모든 정보를 입력해주세요!', 'error');
+    if (password.length < 4) return showNotification('비밀번호는 4자 이상이어야 합니다.', 'error');
+    if (!email.includes('@')) return showNotification('올바른 이메일 형식을 입력해주세요.', 'error');
 
     fetch('/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, sex })
     })
-        .then(response => {
-            if (response.ok) {
-                alert('회원가입 성공!');
-                closeSignupModal();
-            } else {
-                alert('회원가입 실패!');
-            }
-        })
-        .catch(error => {
-            console.error('Signup error:', error);
-            alert('오류가 발생했습니다.');
-        });
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification('회원가입 성공! 이제 로그인해주세요.', 'success');
+            controlModal('signupModal', false);
+            form.reset();
+        } else {
+            showNotification(data.message || '회원가입 실패!', 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Signup error:', err);
+        showNotification('서버 연결 오류가 발생했습니다.', 'error');
+    });
 }
 
-/**
- * 로그인 처리
- */
-/**
- * 로그인 처리
- */
-/**
- * 로그인 처리
- */
 function loginUser() {
-    const name = document.querySelector('#loginModal input[placeholder="아이디"]').value;
-    const password = document.querySelector('#loginModal input[placeholder="비밀번호"]').value;
+    const form = document.getElementById('loginForm');
+    const name = form.elements.loginName.value.trim();
+    const password = form.elements.loginPassword.value.trim();
 
-    if (!name || !password) {
-        alert("아이디와 비밀번호를 입력해주세요.");
-        return;
-    }
+    if (!name || !password) return showNotification("아이디와 비밀번호를 입력해주세요.", "error");
 
     fetch('/login', {
         method: 'POST',
@@ -320,211 +223,169 @@ function loginUser() {
         credentials: 'include',
         body: JSON.stringify({ name, password })
     })
-        .then(response => {
-            if (!response.ok) throw new Error("로그인 실패");
-            return fetch('/me', { credentials: 'include' });
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const user = data.user;
-                window.loggedInUser = user;
-
-                // 네비게이션 바에 프로필 버튼 추가
-                const nav = document.querySelector('nav ul');
-
-                // 로그인/회원가입 버튼 숨기기
-                document.querySelector('#loginNav').style.display = 'none';
-                document.querySelector('#signupNav').style.display = 'none';
-
-                // 프로필 버튼 추가 (중복 방지)
-                if (!document.querySelector('#profileNav')) {
-                    const profileItem = document.createElement('li');
-                    profileItem.id = 'profileNav'; // ID 부여
-                    profileItem.innerHTML = `<a href="#" onclick="showProfile()">👤 ${user.name}</a>`;
-                    nav.appendChild(profileItem);
-                }
-
-                // 로그아웃 버튼 추가 (중복 방지)
-                if (!document.querySelector('#logoutNav')) {
-                    const logoutItem = document.createElement('li');
-                    logoutItem.id = 'logoutNav'; // ID 부여
-                    logoutItem.innerHTML = `<a href="#" onclick="logoutUser()">로그아웃</a>`;
-                    nav.appendChild(logoutItem);
-                }
-
-                alert('로그인 성공!');
-                closeLoginModal();
-            } else {
-                alert('로그인 실패: 사용자 정보를 불러올 수 없습니다.');
-            }
-        })
-        .catch(error => {
-            console.error('Login error:', error);
-            alert('로그인 중 오류가 발생했습니다.');
-        });
-}
-
-/**
- * 로그아웃 처리
- */
-function logoutUser() {
-    fetch('/logout', {
-        method: 'POST',
-        credentials: 'include'
+    .then(res => {
+        if (!res.ok) return res.json().then(err => { throw new Error(err.message || "로그인 실패") });
+        return res.json();
     })
-        .then(response => {
-            if (response.ok) {
-                window.loggedInUser = null; // 전역 사용자 정보 초기화
-
-                // 로그인/회원가입 버튼 다시 보이기
-                document.querySelector('#loginNav').style.display = 'list-item';
-                document.querySelector('#signupNav').style.display = 'list-item';
-
-                // 프로필과 로그아웃 버튼 제거
-                document.querySelector('#profileNav')?.remove();
-                document.querySelector('#logoutNav')?.remove();
-
-                alert('로그아웃 되었습니다.');
-                showPage('home'); // 홈으로 이동
-            } else {
-                alert('로그아웃에 실패했습니다.');
-            }
-        })
-        .catch(error => {
-            console.error('Logout error:', error);
-            alert('로그아웃 중 오류가 발생했습니다.');
-        });
+    .then(data => {
+        if (data.status === 'success' && data.user) {
+            showNotification('로그인 성공!', 'success');
+            updateNav(data.user);
+            controlModal('loginModal', false);
+            form.reset();
+        } else {
+            throw new Error(data.message || '로그인에 실패했습니다.');
+        }
+    })
+    .catch(err => {
+        console.error('Login error:', err);
+        showNotification(err.message, 'error');
+    });
 }
 
+function logoutUser() {
+    fetch('/logout', { method: 'POST', credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification('로그아웃 되었습니다.', 'info');
+            updateNav(null);
+        } else {
+            showNotification('로그아웃에 실패했습니다.', 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Logout error:', err);
+        showNotification('로그아웃 중 오류가 발생했습니다.', 'error');
+    });
+}
 
-
-/**
- * 사용자 프로필 표시
- */
-function showProfile() {
-    const user = window.loggedInUser;
-    if (!user) {
-        alert("로그인된 사용자가 없습니다.");
-        return;
+async function checkLoginStatus() {
+    try {
+        const response = await fetch('/me', { credentials: 'include' });
+        const data = await response.json();
+        updateNav(response.ok && data.status === 'success' ? data.user : null);
+    } catch (error) {
+        console.error('Could not check login status:', error);
+        updateNav(null);
     }
-
-    document.getElementById('profileContent').innerHTML = `
-        <p><strong>이름:</strong> ${user.name}</p>
-        <p><strong>이메일:</strong> ${user.email}</p>
-        <p><strong>성별:</strong> ${user.sex}</p>
-        ${user.image ? `<img src="${user.image}" style="width:100px; border-radius:10px;">` : '<p>이미지 없음</p>'}
-    `;
-    document.getElementById('profileModal').style.display = 'block';
-}
-function closeProfile() {
-    document.getElementById('profileModal').style.display = 'none';
 }
 
-/******************************************************
- * 탭/시뮬레이션/공유 등 UI 유틸
- ******************************************************/
-/**
- * 결과 화면 내 탭 전환용
- * - 현재 구현은 event 객체를 직접 사용하고 있어, 함수 시그니처를 switchTab(event, tabName)으로 바꾸는게 안전
- * - 또는 addEventListener 내부에서 화살표 함수로 event를 캡처하는 방식 추천
- */
-function switchTab(tabName) {
-    const buttons = document.querySelectorAll('.tab-button');
-    buttons.forEach(btn => btn.classList.remove('active'));
+function updateNav(user) {
+    window.loggedInUser = user;
+    const navUl = document.querySelector('nav ul');
+    navUl.querySelectorAll('.auth-nav').forEach(el => el.remove());
 
-    // ⚠️ 아래 코드에서 event는 전역이 아님. 브라우저에 따라 동작하지 않을 수 있음.
-    // 안전하게 하려면 인자로 받은 event.currentTarget을 쓰도록 수정 필요.
-    event.target.classList.add('active');
-
-    // TODO: tabName에 따라 각기 다른 컬러 옵션 UI를 보여주는 로직 작성
-}
-
-/**
- * 특정 타입(예: 립/상의 등)에 특정 색상을 적용하는 시뮬레이션
- * 실제 구현에서는 캔버스/웹GL/필터 등을 통해 미리보기 이미지에 색을 입히게 될 것
- */
-function applyColor(type, color) {
-    console.log(`Applying ${color} to ${type}`);
-    alert(`${type}에 ${color} 색상을 적용합니다. (실제 구현에서는 가상 스타일링 이미지를 보여줍니다)`);
-}
-
-/**
- * 결과 저장(예: PDF 다운로드 등) – 현재는 단순 알림
- */
-function saveResult() {
-    alert('결과가 저장되었습니다! (실제 구현에서는 PDF 다운로드 등)');
-}
-
-/**
- * 결과 공유(예: 카카오톡/인스타그램 공유) – 현재는 단순 알림
- */
-function shareResult() {
-    alert('소셜 미디어 공유 기능 (실제 구현에서는 카카오톡, 인스타그램 등)');
-}
-
-/******************************************************
- * 드래그 앤 드롭 업로드
- ******************************************************/
-const uploadAreaContainer = document.querySelector('.upload-section');
-
-// 파일이 dragover 되는 동안 기본 동작(열기 등) 막기
-uploadAreaContainer.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-});
-
-// 영역을 벗어났을 때도 기본 동작 막기
-uploadAreaContainer.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-});
-
-// 드롭됐을 때 파일을 읽어 displayAndSetFile로 넘김
-uploadAreaContainer.addEventListener('drop', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-        displayAndSetFile(files[0]);
+    if (user) {
+        navUl.insertAdjacentHTML('beforeend', `
+            <li class="auth-nav"><a href="#" data-modal="profileModal">👤 ${user.name}</a></li>
+            <li class="auth-nav"><a href="#" id="logoutBtn">로그아웃</a></li>
+        `);
+        document.getElementById('profileContent').innerHTML = `
+            <p><strong>이름:</strong> ${user.name}</p>
+            <p><strong>이메일:</strong> ${user.email}</p>
+            <p><strong>성별:</strong> ${user.sex === 'male' ? '남성' : '여성'}</p>
+            ${user.image ? `<img src="${user.image}" class="profile-image">` : ''}
+        `;
+    } else {
+        navUl.insertAdjacentHTML('beforeend', `
+            <li class="auth-nav"><a href="#" data-modal="loginModal">로그인</a></li>
+            <li class="auth-nav"><a href="#" data-modal="signupModal">회원가입</a></li>
+        `);
     }
-});
+}
 
 /******************************************************
- * 배경 파티클 애니메이션
+ * 기타 UI 및 초기화
  ******************************************************/
-/**
- * .animated-bg 컨테이너 안에 랜덤 위치/크기의 파티클 div를
- * 20개 생성하고, 각각 다른 animationDelay/Duration을 적용
- */
+function goToMakeover() {
+    if (uploadedFilename && analyzedClusterId !== null) {
+        window.location.href = `/makeover?filename=${uploadedFilename}&cluster_num=${analyzedClusterId}`;
+    } else {
+        showNotification("먼저 이미지를 분석해주세요.", "error");
+    }
+}
+
 function createParticles() {
     const container = document.querySelector('.animated-bg');
-    if (!container) return; // 컨테이너가 없으면 실행하지 않음
-
+    if (!container) return;
     for (let i = 0; i < 20; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        particle.style.width = Math.random() * 10 + 5 + 'px';
-        particle.style.height = particle.style.width;
-        particle.style.animationDelay = Math.random() * 6 + 's';
-        particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        const size = Math.random() * 10 + 5;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.animationDelay = `${Math.random() * 6}s`;
+        particle.style.animationDuration = `${Math.random() * 3 + 3}s`;
         container.appendChild(particle);
     }
 }
 
-// 페이지가 로드되면 파티클을 생성
-window.addEventListener('load', createParticles);
+document.addEventListener('DOMContentLoaded', () => {
+    createParticles();
+    checkLoginStatus();
+    showPage('home');
 
+    // 전역 이벤트 위임 (Event Delegation)
+    document.body.addEventListener('click', e => {
+        const target = e.target;
+        const pageLink = target.closest('[data-page]');
+        const modalLink = target.closest('[data-modal]');
+        const closeModalBtn = target.closest('.close-button');
 
-// 파일 맨 아래에 새로운 함수 추가
-function goToMakeover() {
-    if (uploadedFilename && analyzedClusterId !== null) {
-        // 분석된 결과를 바탕으로 makeover 페이지로 이동
-        window.location.href = `/makeover?filename=${uploadedFilename}&cluster_num=${analyzedClusterId}`;
-    } else {
-        alert("먼저 이미지를 분석해주세요.");
+        if (pageLink) {
+            e.preventDefault();
+            showPage(pageLink.dataset.page);
+        }
+        if (modalLink) {
+            e.preventDefault();
+            controlModal(modalLink.dataset.modal, true);
+        }
+        if (closeModalBtn) {
+            controlModal(closeModalBtn.closest('.modal').id, false);
+        }
+        if (target.closest('#logoutBtn')) {
+            e.preventDefault();
+            logoutUser();
+        }
+        if (target.closest('#analyzeBtn')) {
+            startAnalysis();
+        }
+        if (target.closest('#goToMakeoverBtn')) {
+            goToMakeover();
+        }
+        if (target.closest('.upload-area-file')) {
+            document.getElementById('fileInput').click();
+        }
+        if (target.closest('.upload-area-webcam')) {
+            openWebcam();
+        }
+        if (target.closest('#webcamModal .cta-button')) {
+            takeSnapshot();
+        }
+    });
+
+    // 양식 제출
+    document.getElementById('loginForm')?.addEventListener('submit', e => { e.preventDefault(); loginUser(); });
+    document.getElementById('signupForm')?.addEventListener('submit', e => { e.preventDefault(); signupUser(); });
+    
+    // 파일 입력
+    document.getElementById('fileInput')?.addEventListener('change', handleFileSelect);
+    
+    // 드래그 앤 드롭
+    const uploadSection = document.querySelector('.upload-section');
+    if(uploadSection) {
+        uploadSection.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('dragover'); });
+        uploadSection.addEventListener('dragleave', e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('dragover'); });
+        uploadSection.addEventListener('drop', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                displayAndSetFile(e.dataTransfer.files[0]);
+            }
+        });
     }
-}
+});
