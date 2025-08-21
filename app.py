@@ -17,6 +17,8 @@ import ssl
 import albumentations as A
 from scipy import ndimage
 from skimage import exposure, color
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 # 가상 메이크업 기능에 필요한 import
 from torchvision import transforms
@@ -30,7 +32,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 # Flask 웹 애플리케이션 초기화
 app = Flask(__name__, template_folder='templates', static_folder='static')
-app.secret_key = '12345'
+app.secret_key = os.urandom(24)
 
 # 웹앱 기본 설정
 UPLOAD_FOLDER = 'uploads'
@@ -60,14 +62,54 @@ CLUSTER_DESCRIPTIONS = {
 
 # 가상 메이크업에 사용할 컬러 팔레트
 MAKEOVER_PALETTES = {
-    0: [["#D9A882", "#A2DADA", "#F68B8B", "#F5E7C3"], ["#5D4B40", "#7F9C92", "#C45A5A", "#A7B6B4"], ["#B36B3D", "#E4D4B7", "#F08A8A", "#512525"]],
-    1: [["#A0522D", "#E1C699", "#E57373", "#FFD580"], ["#4A403A", "#8DA399", "#B34747", "#9AB9B7"], ["#C7A997", "#ABC0BB", "#EAA3A3", "#691DBB"]],
-    2: [["#2A252F", "#5C7A86", "#A32E31", "#3A565A"], ["#D1B7AA", "#9DB8B5", "#E5A4A4", "#D0BBDE"], ["#8A3500", "#332436", "#D1259A", "#58FFF4"]],
-    3: [["#1F1B24", "#4A7E94", "#9E2A2B", "#354F52"], ["#CBB3A5", "#A9C6C2", "#E9A6A6", "#D7C4E0"], ["#231E28", "#1D282D", "#922F30", "#05A6B1"]],
-    4: [["#7B3F00", "#C49E3F", "#8B4D40", "#C2B280"], ["#2A252F", "#5C7A86", "#A32E31", "#3A565A"], ["#E46253", "#FFE165", "#FF6A8A", "#FF916F"]],
-    5: [["#D8A47F", "#9FD9D9", "#F08A8A", "#F7E6C4"], ["#3B2F2F", "#6B8E23", "#C94C4C", "#A8B5BA"], ["#D6A47D", "#9CD8D8", "#F08989", "#B2924C"]],
-    6: [["#A9746E", "#C7D3D4", "#D87070", "#E9CFCF"], ["#2A252F", "#5C7A86", "#A32E31", "#3A565A"], ["#E46253", "#FFE165", "#FF6A8A", "#FF916F"]],
-    7: [["#E26D5A", "#FFE066", "#FF6F91", "#FF9671"], ["#2A252F", "#5C7A86", "#A32E31", "#3A565A"], ["#B17B78", "#C9D5D5", "#D97474", "#EBCFCF"]],
+    # 0: Golden
+    0: [
+        ["#D9A882", "#A2DADA", "#F68B8B", "#F5E7C3"],  # Style 1 (Natural)
+        ["#5D4B40", "#7F9C92", "#C45A5A", "#A7B6B4"],  # Style 2 (Smokey)
+        ["#8A3500", "#33A399", "#D1256A", "#512525"]   # Style 3 (Vibrant)
+    ],
+    # 1: Warm Beige
+    1: [
+        ["#A0522D", "#E1C699", "#E57373", "#FFD580"],  # Style 1 (Natural)
+        ["#4A403A", "#8DA399", "#B34747", "#9AB9B7"],  # Style 2 (Smokey)
+        ["#C78967", "#6AABBB", "#E0607F", "#691DBB"]   # Style 3 (Pastel)
+    ],
+    # 2: Cool Rose
+    2: [
+        ["#C19A8B", "#5C7A86", "#A32E31", "#3A565A"],  # Style 1 (Ashy)
+        ["#D1B7AA", "#9DB8B5", "#E5A4A4", "#D0BBDE"],  # Style 2 (Soft)
+        ["#332436", "#8A3500", "#D1259A", "#58FFF4"]   # Style 3 (Fantasy)
+    ],
+    # 3: Muted Clay
+    3: [
+        ["#9E6B58", "#4A7E94", "#9E2A2B", "#354F52"],  # Style 1 (Earthy)
+        ["#CBB3A5", "#A9C6C2", "#E9A6A6", "#D7C4E0"],  # Style 2 (Soft)
+        ["#5C4033", "#78866B", "#B87333", "#05A6B1"]   # Style 3 (Woodsy)
+    ],
+    # 4: Warm Apricot
+    4: [
+        ["#7B3F00", "#C49E3F", "#8B4D40", "#C2B280"],  # Style 1 (Natural)
+        ["#2A252F", "#5C7A86", "#A32E31", "#3A565A"],  # Style 2 (Smokey)
+        ["#E46253", "#50B2C0", "#FF6A8A", "#FF916F"]   # Style 3 (Tropical)
+    ],
+    # 5: Peachy Pink
+    5: [
+        ["#D8A47F", "#9FD9D9", "#F08A8A", "#F7E6C4"],  # Style 1 (Natural)
+        ["#3B2F2F", "#6B8E23", "#C94C4C", "#A8B5BA"],  # Style 2 (Earthy)
+        ["#E55986", "#5EC4D4", "#FF6B6B", "#FFD166"]   # Style 3 (Vivid)
+    ],
+    # 6: Honey Buff
+    6: [
+        ["#A9746E", "#C7D3D4", "#D87070", "#E9CFCF"],  # Style 1 (Natural)
+        ["#2A252F", "#5C7A86", "#A32E31", "#3A565A"],  # Style 2 (Smokey)
+        ["#DAA520", "#4682B4", "#CD5C5C", "#6B8E23"]   # Style 3 (Bold)
+    ],
+    # 7: Beige Rose
+    7: [
+        ["#DDC2B4", "#BCA69A", "#D99A9A", "#EBD5C8"],  # Style 1 (Natural)
+        ["#B17B78", "#C9D5D5", "#D97474", "#EBCFCF"],  # Style 2 (Soft Rose)
+        ["#6A5ACD", "#20B2AA", "#F08080", "#3A565A"]   # Style 3 (Royal)
+    ]
 }
 
 # AI 모델 관련 전역 변수 초기화
@@ -89,7 +131,7 @@ def hex_to_bgr(hex_color):
     r = int(hex_color[0:2],16)
     g = int(hex_color[2:4],16)
     b = int(hex_color[4:6],16)
-    return [r,g,b]
+    return [b,g,r]
 # ==============================================================================
 # 고급 조명 보정 함수들 (기존과 동일)
 # ==============================================================================
@@ -289,7 +331,7 @@ def get_cluster_info(cluster_id):
 @app.route('/')
 def index():
     """메인 페이지를 렌더링하는 라우트"""
-    return render_template('index.html')
+    return render_template('index.html', user=session.get('user'))
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
@@ -374,7 +416,7 @@ def makeover():
     lip_color = hex_to_bgr(selected_palette[2])
 
     # 메이크업 적용
-    img_makeup = hair(img_rgb, parsing_resized, 17, hair_color)      # 헤어
+    img_makeup = hair(img_bgr, parsing_resized, 17, hair_color)      # 헤어
     img_makeup = hair(img_makeup, parsing_resized, 12, lip_color)    # 윗입술
     img_makeup = hair(img_makeup, parsing_resized, 13, lip_color)    # 아랫입술
     # 렌즈는 hair 함수를 재사용하되, 다른 파트 번호와 색상을 전달
@@ -384,14 +426,15 @@ def makeover():
     # 결과 이미지 저장
     result_filename = f"makeover_{palette_num}_{filename}"
     result_path = os.path.join(app.config['UPLOAD_FOLDER'], result_filename)
-    cv2.imwrite(result_path, cv2.cvtColor(img_makeup, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(result_path, img_makeup)
 
     return render_template("makeover.html",
                            original_image=filename,
                            result_image=result_filename,
                            palettes=MAKEOVER_PALETTES,
                            selected_cluster=cluster_num,
-                           selected_palette=palette_num)
+                           selected_palette=palette_num,
+                           user=session.get('user'))
 
 
 @app.route('/uploads/<filename>')
@@ -399,9 +442,20 @@ def uploaded_file(filename):
     """업로드된 이미지 파일을 제공하는 라우트"""
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/guide')
+def guide():
+    """컬러 가이드 페이지를 렌더링하는 라우트"""
+    return render_template('guide.html', user=session.get('user'))
+
+@app.route('/about')
+def about():
+    """팀 소개 페이지를 렌더링하는 라우트"""
+    return render_template('about.html', user=session.get('user'))
+
 # ==============================================================================
 # 사용자 인증 관련 라우트
 # ==============================================================================
+
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json(silent=True)
@@ -410,11 +464,29 @@ def signup():
 
     db = get_db()
     users = db.collection('users')
+
+    # Check if name (ID) already exists
+    name_query = users.where(field_path='name', op_string='==', value=data['name']).limit(1).stream()
+    if next(name_query, None) is not None:
+        return jsonify({'status': 'error', 'message': 'ID already exists'}), 400
+
+    # Check if email already exists
     doc_ref = users.document(data['email'])
     if doc_ref.get().exists:
         return jsonify({'status': 'error', 'message': 'Email already exists'}), 400
     
-    doc_ref.set({k: data[k] for k in ['name', 'email', 'password', 'sex']})
+    # 비밀번호를 해싱하여 저장
+    hashed_password = generate_password_hash(data['password'])
+    
+    user_data = {
+        'name': data['name'],
+        'email': data['email'],
+        'sex': data['sex'],
+        'password': hashed_password
+    }
+    
+    doc_ref.set(user_data)
+    
     return jsonify({'status': 'success'}), 200
 
 @app.route('/login', methods=['POST'])
@@ -425,18 +497,54 @@ def login():
 
     db = get_db()
     users = db.collection('users')
-    q = users.where('name', '==', data['name']).limit(1).stream()
-    user_doc = next(q, None)
+    
+    login_identifier = data['name']
+    password = data['password']
+    
+    user_doc = None
+    # Check if the identifier is an email
+    if '@' in login_identifier:
+        doc_ref = users.document(login_identifier)
+        user_doc = doc_ref.get()
+    else:
+        # Assume it's a name/ID
+        query = users.where(field_path='name', op_string='==', value=login_identifier).limit(1).stream()
+        user_doc = next(query, None)
 
-    if not user_doc or user_doc.to_dict().get('password') != data['password']:
+    user_data = user_doc.to_dict() if user_doc and user_doc.exists else None
+
+    if user_data is None:
         return jsonify({'status': 'error', 'message': 'Invalid name or password'}), 401
 
-    user = user_doc.to_dict()
-    session['user'] = {
-        'name': user['name'], 'email': user['email'], 'sex': user['sex'],
-        'image': None if not user.get('image') else f"/user_image/{user['name']}"
+    stored_password = user_data.get('password', '')
+    password_match = False
+
+    if stored_password.startswith('pbkdf2:sha256$'):
+        if check_password_hash(stored_password, password):
+            password_match = True
+    else:
+        if stored_password == password:
+            password_match = True
+            try:
+                new_hashed_password = generate_password_hash(password)
+                # Simplified and more robust update logic
+                users.document(user_doc.id).update({'password': new_hashed_password})
+                print(f"Password for user {user_data['name']} has been securely hashed.")
+            except Exception as e:
+                print(f"Error updating password for user {user_data['name']}: {e}")
+
+    if not password_match:
+        return jsonify({'status': 'error', 'message': 'Invalid name or password'}), 401
+
+    user_session_data = {
+        'name': user_data.get('name'),
+        'email': user_data.get('email'),
+        'sex': user_data.get('sex'),
+        'image': None if not user_data.get('image') else f"/user_image/{user_data.get('name')}"
     }
-    return jsonify({'status': 'success'}), 200
+    session['user'] = user_session_data
+    
+    return jsonify({'status': 'success', 'user': user_session_data}), 200
 
 @app.route('/logout', methods=['POST'])
 def logout():
@@ -448,6 +556,7 @@ def get_profile():
     if not session.get('user'):
         return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
     return jsonify({'status': 'success', 'user': session['user']}), 200
+
 
 # ==============================================================================
 # 메인 실행 부분

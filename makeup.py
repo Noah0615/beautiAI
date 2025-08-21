@@ -23,57 +23,49 @@ def sharpen(img):
     return np.array(img_out, dtype=np.uint8)
 
 
+def soft_light_blend(base, blend_color_img):
+    """
+    Applies soft light blending mode.
+    Assumes base and blend_color_img are in the same color space (e.g., BGR)
+    and have the same dimensions.
+    """
+    # Scale to 0-1 float range
+    base_float = base.astype(np.float32) / 255.0
+    blend_float = blend_color_img.astype(np.float32) / 255.0
+
+    # Soft light formula
+    result_float = np.where(blend_float < 0.5,
+                            2 * base_float * blend_float + base_float**2 * (1 - 2 * blend_float),
+                            2 * base_float * (1 - blend_float) + np.sqrt(base_float) * (2 * blend_float - 1))
+
+    # Scale back to 0-255 uint8 range
+    return np.clip(result_float * 255, 0, 255).astype(np.uint8)
+
+
 def hair(image, parsing, part=17, color=[230, 50, 20]):
-    b, g, r = color      #[10, 50, 250]       # [10, 250, 10]
-    tar_color = np.zeros_like(image)
-    tar_color[:, :, 0] = b
-    tar_color[:, :, 1] = g
-    tar_color[:, :, 2] = r
+    """
+    Applies color to a specific part of the image using soft light blending.
+    'image' is expected in BGR format.
+    'color' is a list [b, g, r].
+    """
+    b, g, r = color
+    # Create a solid color image with the target color
+    tar_color_img = np.zeros_like(image)
+    tar_color_img[:, :] = (b, g, r)
 
-    image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    tar_hsv = cv2.cvtColor(tar_color, cv2.COLOR_BGR2HSV)
+    # Blend the original image with the solid color image
+    blended_image = soft_light_blend(image, tar_color_img)
 
-    if part == 12 or part == 13:
-        image_hsv[:, :, 0:2] = tar_hsv[:, :, 0:2]
-    else:
-        image_hsv[:, :, 0:1] = tar_hsv[:, :, 0:1]
-
-    changed = cv2.cvtColor(image_hsv, cv2.COLOR_HSV2BGR)
-
+    # Apply sharpening for hair
     if part == 17:
-        changed = sharpen(changed)
+        blended_image = sharpen(blended_image)
 
-    changed[parsing != part] = image[parsing != part]
-    # changed = cv2.resize(changed, (512, 512))
+    # Create a copy of the original image to modify
+    changed = image.copy()
+    # Apply the blended color only to the specified part
+    changed[parsing == part] = blended_image[parsing == part]
+    
     return changed
-
-#
-# def lip(image, parsing, part=17, color=[230, 50, 20]):
-#     b, g, r = color      #[10, 50, 250]       # [10, 250, 10]
-#     tar_color = np.zeros_like(image)
-#     tar_color[:, :, 0] = b
-#     tar_color[:, :, 1] = g
-#     tar_color[:, :, 2] = r
-#
-#     image_lab = cv2.cvtColor(image, cv2.COLOR_BGR2Lab)
-#     il, ia, ib = cv2.split(image_lab)
-#
-#     tar_lab = cv2.cvtColor(tar_color, cv2.COLOR_BGR2Lab)
-#     tl, ta, tb = cv2.split(tar_lab)
-#
-#     image_lab[:, :, 0] = np.clip(il - np.mean(il) + tl, 0, 100)
-#     image_lab[:, :, 1] = np.clip(ia - np.mean(ia) + ta, -127, 128)
-#     image_lab[:, :, 2] = np.clip(ib - np.mean(ib) + tb, -127, 128)
-#
-#
-#     changed = cv2.cvtColor(image_lab, cv2.COLOR_Lab2BGR)
-#
-#     if part == 17:
-#         changed = sharpen(changed)
-#
-#     changed[parsing != part] = image[parsing != part]
-#     # changed = cv2.resize(changed, (512, 512))
-#     return changed
 
 
 if __name__ == '__main__':
@@ -113,18 +105,3 @@ if __name__ == '__main__':
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
