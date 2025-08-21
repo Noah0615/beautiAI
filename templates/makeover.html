@@ -9,14 +9,22 @@
 </head>
 
 <body>
+    <div id="notification-container"></div>
     <div class="animated-bg">
         {% include 'navigation.html' %}
 
-        <div class="container makeover-container">
+        <div class="container makeover-container"
+             data-original-image="{{ original_image }}"
+             data-result-image="{{ result_image }}"
+             data-cluster-num="{{ selected_cluster }}">
+            
             <div class="result-header makeover-header">
                 <h2>가상 스타일링</h2>
                 <p>다른 컬러 팔레트를 클릭하여 새로운 스타일을 적용해보세요!</p>
-                <a href="{{ url_for('index') }}" class="cta-button">↩️ 홈으로 돌아가기</a>
+                <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                    <a href="{{ url_for('index') }}" class="cta-button">↩️ 홈으로 돌아가기</a>
+                    <button id="downloadReportBtn" class="cta-button">📄 PDF 리포트 다운로드</button>
+                </div>
             </div>
 
             {% if palettes %}
@@ -47,6 +55,7 @@
             </div>
         </div>
     </div>
+
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 
