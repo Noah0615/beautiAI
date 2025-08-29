@@ -282,6 +282,9 @@ function updateNav(user) {
             <li class="auth-nav"><a href="#" data-modal="profileModal">👤 ${user.name}</a></li>
             <li class="auth-nav"><a href="#" id="logoutBtn">로그아웃</a></li>
         `);
+        if (user.name === 'hanwae') {
+            navUl.insertAdjacentHTML('beforeend', '<li class="auth-nav"><a href="/developer_makeup">💄 메이크업 개발</a></li>');
+        }
         document.getElementById('profileContent').innerHTML = `
             <p><strong>이름:</strong> ${user.name}</p>
             <p><strong>이메일:</strong> ${user.email}</p>
