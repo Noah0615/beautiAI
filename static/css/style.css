@@ -1,3 +1,7 @@
+html {
+    scroll-behavior: smooth;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -543,7 +547,7 @@ nav a:hover {
 
 .color-card.open .color-card-details {
     padding-bottom: 1.5rem;
-    max-height: 600px; /* Adjust as needed */
+    max-height: 1200px; /* Increased for more colors */
 }
 
 .detail-palette {
@@ -562,7 +566,13 @@ nav a:hover {
 
 .detail-palette-swatches {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 0.5rem; /* 행 간격 */
+}
+
+.swatch-row {
+    display: flex;
+    flex-wrap: nowrap;
     gap: 0.75rem;
 }
 
@@ -684,6 +694,15 @@ nav a:hover {
     .guidelines {
         grid-template-columns: 1fr;
     }
+
+    /* Responsive guide swatches */
+    .detail-palette-swatches .swatch {
+        width: 40px;
+        height: 40px;
+    }
+    .swatch-row {
+        gap: 0.5rem;
+    }
 }
 
 /* 플로팅 파티클 효과 */
@@ -753,7 +772,7 @@ nav a:hover {
     padding: 5px;
     border-radius: 10px;
     background-color: rgba(255, 255, 255, 0.7);
-    border: 3px solid transparent;
+    border: 3px solid #e0e0e0; /* 기본 테두리 색상 추가 */
     transition: all 0.3s ease;
     cursor: pointer;
 }
