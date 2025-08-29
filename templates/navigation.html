@@ -2,8 +2,8 @@
     <ul>
         <li><a href="#" data-page="home">홈</a></li>
         <li><a href="#" data-page="upload">진단하기</a></li>
-        <li><a href="#" data-page="guide">컬러 가이드</a></li>
-        <li><a href="#" data-page="about">팀 소개</a></li>
+        <li><a href="{{ url_for('guide') }}">컬러 가이드</a></li>
+        <li><a href="{{ url_for('about') }}">팀 소개</a></li>
         <!-- 로그인/사용자 정보는 main.js에서 동적으로 채워집니다 -->
     </ul>
 </nav>

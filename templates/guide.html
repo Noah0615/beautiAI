@@ -10,29 +10,131 @@
     <div class="animated-bg">
         {% include 'navigation.html' %}
         <div id="guide" class="page-section active">
-            <div class="container" style="padding-top: 100px; text-align: center;">
-                <div class="hero-content">
+            <div class="container" style="padding-top: 100px;">
+                <div class="guide-header">
                     <h1>🎨 컬러 가이드</h1>
-                    <p class="subtitle">각 퍼스널 컬러 타입에 대한 상세 정보와 스타일링 팁을 확인해보세요.</p>
-                    <div class="description" style="text-align: left;">
-                        <p>이 페이지는 현재 준비 중입니다. 각 8가지 퍼스널 컬러 타입에 대한 자세한 설명, 어울리는 색상 팔레트, 메이크업 및 패션 스타일링 팁이 곧 추가될 예정입니다.</p>
-                        <br>
-                        <p><strong>예정 콘텐츠:</strong></p>
-                        <ul>
-                            <li>골든 타입 (Golden) 상세 분석</li>
-                            <li>웜 베이지 타입 (Warm Beige) 상세 분석</li>
-                            <li>쿨 로즈 타입 (Cool Rose) 상세 분석</li>
-                            <li>뮤트 클레이 타입 (Muted Clay) 상세 분석</li>
-                            <li>웜 애프리콧 타입 (Warm Apricot) 상세 분석</li>
-                            <li>피치 핑크 타입 (Peachy Pink) 상세 분석</li>
-                            <li>허니 버프 타입 (Honey Buff) 상세 분석</li>
-                            <li>베이지 로즈 타입 (Beige Rose) 상세 분석</li>
-                        </ul>
-                    </div>
+                    <p class="subtitle">각 퍼스널 컬러 타입에 대한 상세 정보와 스타일링 팁을 확인해보세요.<br>카드를 클릭하면 상세 컬러 팔레트를 볼 수 있습니다.</p>
+                </div>
+                <div id="color-guide-container" class="color-guide-grid">
+                    <!-- Color cards will be dynamically generated here -->
                 </div>
             </div>
         </div>
     </div>
+
+    <template id="color-card-template">
+        <div class="color-card">
+            <div class="color-card-header">
+                <div class="color-card-preview"></div>
+                <div class="color-card-title">
+                    <h2></h2>
+                    <p></p>
+                </div>
+                <div class="color-card-toggle">
+                    <span>+</span>
+                </div>
+            </div>
+            <div class="color-card-details"></div>
+        </div>
+    </template>
+
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const descriptions = {
+            "Golden": "따뜻하고 활기찬 골드 계열 컬러가 어울리며, 밝고 화사한 인상을 줍니다.",
+            "Warm Beige": "부드러운 베이지 톤과 어울려 자연스럽고 따뜻한 분위기를 연출합니다.",
+            "Muted Clay": "흙빛이 감도는 차분한 컬러로 자연스럽고 안정적인 이미지를 줍니다.",
+            "Warm Apricot": "상큼한 살구빛이 피부 톤을 밝혀주며 활기차고 따뜻한 분위기를 연출합니다.",
+            "Peachy Pink": "러블리하고 발랄한 핑크 계열이 잘 어울리며, 생기 있고 유쾌한 느낌을 줍니다.",
+            "Honey Buff": "꿀빛처럼 따뜻한 골드 베이지 계열로 건강하고 세련된 이미지를 보여줍니다.",
+            "Beige Rose": "로즈빛이 감도는 베이지 계열로 우아하면서도 부드러운 매력을 살려줍니다."
+        };
+        const koreanNames = {
+            "Golden": "골든 타입",
+            "Warm Beige": "웜 베이지 타입",
+            "Muted Clay": "뮤트 클레이 타입",
+            "Warm Apricot": "웜 애프리콧 타입",
+            "Peachy Pink": "피치 핑크 타입",
+            "Honey Buff": "허니 버프 타입",
+            "Beige Rose": "베이지 로즈 타입"
+        };
+
+        const container = document.getElementById('color-guide-container');
+        const template = document.getElementById('color-card-template');
+
+        fetch("{{ url_for('static', filename='data/colors.json') }}")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!container || !template) {
+                    console.error('Required elements not found in the DOM');
+                    return;
+                }
+
+                for (const typeName in data) {
+                    if (Object.hasOwnProperty.call(data, typeName)) {
+                        const cardFragment = template.content.cloneNode(true);
+                        const card = cardFragment.querySelector('.color-card');
+                        const colorData = data[typeName];
+
+                        // Header
+                        const previewContainer = card.querySelector('.color-card-preview');
+                        colorData.preview.forEach(color => {
+                            const swatch = document.createElement('div');
+                            swatch.className = 'swatch';
+                            swatch.style.backgroundColor = color;
+                            previewContainer.appendChild(swatch);
+                        });
+
+                        card.querySelector('.color-card-title h2').textContent = koreanNames[typeName] || typeName;
+                        card.querySelector('.color-card-title p').textContent = descriptions[typeName] || '';
+
+                        // Details
+                        const detailsContainer = card.querySelector('.color-card-details');
+                        for (const category in colorData) {
+                            if (category === 'preview') continue;
+
+                            const paletteDiv = document.createElement('div');
+                            paletteDiv.className = 'detail-palette';
+                            
+                            const title = document.createElement('h3');
+                            title.textContent = category;
+                            paletteDiv.appendChild(title);
+
+                            const swatchesDiv = document.createElement('div');
+                            swatchesDiv.className = 'detail-palette-swatches';
+                            colorData[category].forEach(color => {
+                                const swatch = document.createElement('div');
+                                swatch.className = 'swatch';
+                                swatch.style.backgroundColor = color;
+                                swatch.dataset.color = color; // For tooltip
+                                swatchesDiv.appendChild(swatch);
+                            });
+                            paletteDiv.appendChild(swatchesDiv);
+                            detailsContainer.appendChild(paletteDiv);
+                        }
+                        container.appendChild(card);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching or processing color data:', error);
+                container.innerHTML = '<p style="text-align: center; color: #c44569;">컬러 가이드 정보를 불러오는 데 실패했습니다.</p>';
+            });
+
+        container.addEventListener('click', (e) => {
+            const header = e.target.closest('.color-card-header');
+            if (header) {
+                const card = header.parentElement;
+                card.classList.toggle('open');
+            }
+        });
+    });
+    </script>
 </body>
 </html>

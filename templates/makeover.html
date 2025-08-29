@@ -6,6 +6,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>가상 스타일링 체험</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .personal-color-info-box {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem auto;
+            max-width: 600px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .personal-color-info-box p {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #7b7a7a;
+        }
+
+        .personal-color-info-box strong {
+            font-size: 1.3rem;
+            color: #ffc107;
+            /* A bright, appealing color */
+            font-weight: 600;
+        }
+
+        .personal-color-palette {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
+        .personal-color-palette .color-swatch {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            background-color: var(--swatch-color);
+        }
+    </style>
 </head>
 
 <body>
@@ -13,13 +54,23 @@
     <div class="animated-bg">
         {% include 'navigation.html' %}
 
-        <div class="container makeover-container"
-             data-original-image="{{ original_image }}"
-             data-result-image="{{ result_image }}"
-             data-cluster-num="{{ selected_cluster }}">
-            
+        <div class="container makeover-container" data-original-image="{{ original_image }}"
+            data-result-image="{{ result_image }}" data-cluster-num="{{ selected_cluster }}">
+
             <div class="result-header makeover-header">
                 <h2>가상 스타일링</h2>
+
+                {% if personal_color_info %}
+                <div class="personal-color-info-box">
+                    <p>진단된 퍼스널 컬러는 <strong>{{ personal_color_info.visual_name }}</strong> 입니다.</p>
+                    <div class="personal-color-palette">
+                        {% for color in personal_color_info.palette %}
+                        <div class="color-swatch" style="--swatch-color: {{ color }};" title="{{ color }}"></div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
                 <p>다른 컬러 팔레트를 클릭하여 새로운 스타일을 적용해보세요!</p>
                 <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
                     <a href="{{ url_for('index') }}" class="cta-button">↩️ 홈으로 돌아가기</a>
