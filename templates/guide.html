@@ -60,6 +60,22 @@
             "Beige Rose": "베이지 로즈 타입"
         };
 
+        // --- Helper Functions ---
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function getBrightness(hexColor) {
+            const rgb = hexToRgb(hexColor);
+            if (!rgb) return 0;
+            return (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b);
+        }
+
         const container = document.getElementById('color-guide-container');
         const template = document.getElementById('color-card-template');
 
@@ -106,16 +122,27 @@
                             title.textContent = category;
                             paletteDiv.appendChild(title);
 
-                            const swatchesDiv = document.createElement('div');
-                            swatchesDiv.className = 'detail-palette-swatches';
-                            colorData[category].forEach(color => {
+                            const swatchesContainer = document.createElement('div');
+                            swatchesContainer.className = 'detail-palette-swatches';
+
+                            // Sort colors by brightness (brightest to darkest)
+                            const sortedColors = [...colorData[category]].sort((a, b) => getBrightness(b) - getBrightness(a));
+
+                            let currentRow;
+                            sortedColors.forEach((color, index) => {
+                                if (index % 10 === 0) { // Create a new row every 10 swatches
+                                    currentRow = document.createElement('div');
+                                    currentRow.className = 'swatch-row';
+                                    swatchesContainer.appendChild(currentRow);
+                                }
                                 const swatch = document.createElement('div');
                                 swatch.className = 'swatch';
                                 swatch.style.backgroundColor = color;
                                 swatch.dataset.color = color; // For tooltip
-                                swatchesDiv.appendChild(swatch);
+                                currentRow.appendChild(swatch);
                             });
-                            paletteDiv.appendChild(swatchesDiv);
+
+                            paletteDiv.appendChild(swatchesContainer);
                             detailsContainer.appendChild(paletteDiv);
                         }
                         container.appendChild(card);

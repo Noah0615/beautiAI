@@ -7,44 +7,36 @@
     <title>가상 스타일링 체험</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        .personal-color-info-box {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin: 1.5rem auto;
-            max-width: 600px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        /* 가상 스타일링 페이지 전용 스타일 */
+        .makeover-header {
+            width: 100%;
+            max-width: 1000px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
         }
 
-        .personal-color-info-box p {
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-            color: #7b7a7a;
+        .makeover-grid {
+            margin-top: 1.5rem;
+            margin-bottom: 2rem;
         }
 
-        .personal-color-info-box strong {
-            font-size: 1.3rem;
-            color: #ffc107;
-            /* A bright, appealing color */
+        .color-palette-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .personal-color-info-simple {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
+            font-size: 1.2rem; /* 글자 크기 증가 */
+            color: #888;
+        }
+
+        .personal-color-info-simple strong {
+            color: #ff6b9d;
             font-weight: 600;
-        }
-
-        .personal-color-palette {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 1rem;
-        }
-
-        .personal-color-palette .color-swatch {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            background-color: var(--swatch-color);
         }
     </style>
 </head>
@@ -59,50 +51,45 @@
 
             <div class="result-header makeover-header">
                 <h2>가상 스타일링</h2>
+                <p>아래의 다른 컬러 팔레트를 클릭하여 새로운 스타일을 적용해보세요!</p>
 
-                {% if personal_color_info %}
-                <div class="personal-color-info-box">
-                    <p>진단된 퍼스널 컬러는 <strong>{{ personal_color_info.visual_name }}</strong> 입니다.</p>
-                    <div class="personal-color-palette">
-                        {% for color in personal_color_info.palette %}
-                        <div class="color-swatch" style="--swatch-color: {{ color }};" title="{{ color }}"></div>
-                        {% endfor %}
+                <div class="makeover-grid">
+                    <div class="makeover-photo-container">
+                        <h3>원본 사진</h3>
+                        <img src="{{ url_for('uploaded_file', filename=original_image) }}" class="user-image-display">
+                    </div>
+                    <div class="makeover-photo-container">
+                        <h3>스타일링 적용</h3>
+                        <img src="{{ url_for('uploaded_file', filename=result_image) }}" class="user-image-display">
                     </div>
                 </div>
-                {% endif %}
 
-                <p>다른 컬러 팔레트를 클릭하여 새로운 스타일을 적용해보세요!</p>
+                {% if palettes %}
+                <div class="color-palette-container">
+                    {% for i in range(palettes[selected_cluster]|length) %}
+                    <a href="{{ url_for('makeover', filename=original_image, cluster_num=selected_cluster, palette_num=i) }}"
+                        class="palette-group {% if i == selected_palette %}active-palette{% endif %}">
+                        <div class="palette-preview">
+                            {% for color in palettes[selected_cluster][i] %}
+                            <div class="color-swatch" style="--swatch-color: {{ color }};"></div>
+                            {% endfor %}
+                        </div>
+                        <span>스타일 {{ loop.index }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
                 <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
                     <a href="{{ url_for('index') }}" class="cta-button">↩️ 홈으로 돌아가기</a>
                     <button id="downloadReportBtn" class="cta-button">📄 PDF 리포트 다운로드</button>
                 </div>
-            </div>
 
-            {% if palettes %}
-            <div class="color-palette-container">
-                {% for i in range(palettes[selected_cluster]|length) %}
-                <a href="{{ url_for('makeover', filename=original_image, cluster_num=selected_cluster, palette_num=i) }}"
-                    class="palette-group {% if i == selected_palette %}active-palette{% endif %}">
-                    <div class="palette-preview">
-                        {% for color in palettes[selected_cluster][i] %}
-                        <div class="color-swatch" style="--swatch-color: {{ color }};"></div>
-                        {% endfor %}
-                    </div>
-                    <span>스타일 {{ loop.index }}</span>
-                </a>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <div class="makeover-grid">
-                <div class="makeover-photo-container">
-                    <h3>원본 사진</h3>
-                    <img src="{{ url_for('uploaded_file', filename=original_image) }}" class="user-image-display">
+                {% if personal_color_info %}
+                <div class="personal-color-info-simple">
+                    진단된 퍼스널 컬러는 <strong>{{ personal_color_info.visual_name }}</strong> 입니다.
                 </div>
-                <div class="makeover-photo-container">
-                    <h3>스타일링 적용</h3>
-                    <img src="{{ url_for('uploaded_file', filename=result_image) }}" class="user-image-display">
-                </div>
+                {% endif %}
             </div>
         </div>
     </div>
