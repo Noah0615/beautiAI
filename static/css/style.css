@@ -376,6 +376,230 @@ nav a:hover {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
+/* ========================================= */
+/* 홈 페이지 미리보기 섹션 스타일 */
+/* ========================================= */
+.preview-section {
+    padding: 4rem 2rem;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.preview-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.preview-content h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.preview-content .subtitle {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 3rem;
+}
+
+.preview-grid {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.preview-image-container {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 380px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.preview-image-container:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
+}
+
+.preview-image-container h3 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.preview-image-container img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.transformation-arrow {
+    font-size: 3rem;
+    color: #ff6b9d;
+    font-weight: bold;
+    align-self: center;
+    margin: 1rem;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+@media (max-width: 880px) {
+    .transformation-arrow {
+        transform: rotate(90deg);
+    }
+}
+
+/* ========================================= */
+/* 컬러 가이드 (Guide) 페이지 전용 스타일 */
+/* ========================================= */
+.guide-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 2rem;
+    border-radius: 20px;
+}
+
+.color-guide-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    max-width: 900px;
+    margin: 0 auto 5rem auto; /* Add bottom margin */
+}
+
+.color-card {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.07);
+    overflow: hidden;
+    transition: all 0.4s ease;
+}
+
+.color-card.open {
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.color-card-header {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+    cursor: pointer;
+    position: relative;
+}
+
+.color-card-preview {
+    display: flex;
+    margin-right: 1.5rem;
+}
+
+.color-card-preview .swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin-left: -15px;
+}
+.color-card-preview .swatch:first-child {
+    margin-left: 0;
+}
+
+.color-card-title h2 {
+    font-size: 1.5rem;
+    margin: 0;
+    color: #333;
+}
+.color-card-title p {
+    font-size: 1rem;
+    color: #666;
+    margin: 0.25rem 0 0 0;
+}
+
+.color-card-toggle {
+    margin-left: auto;
+    padding-left: 1rem;
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: #ff6b9d;
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    line-height: 1;
+}
+
+.color-card.open .color-card-toggle {
+    transform: rotate(45deg);
+}
+
+.color-card-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out, padding-bottom 0.5s ease-out;
+    padding: 0 1.5rem;
+}
+
+.color-card.open .color-card-details {
+    padding-bottom: 1.5rem;
+    max-height: 600px; /* Adjust as needed */
+}
+
+.detail-palette {
+    margin-top: 1rem;
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+}
+
+.detail-palette h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    color: #333;
+    text-transform: capitalize;
+    font-weight: 600;
+}
+
+.detail-palette-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.detail-palette-swatches .swatch {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    position: relative;
+}
+
+.detail-palette-swatches .swatch:hover {
+    transform: scale(1.1);
+}
+
+.detail-palette-swatches .swatch::after {
+    content: attr(data-color);
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    white-space: nowrap;
+}
+
+.detail-palette-swatches .swatch:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
 
 /* 웹캠 모달 스타일 */
 .modal {
@@ -647,4 +871,70 @@ nav a:hover {
 .notification.info {
     background-color: #2196F3;
     /* 파란색 */
+}
+
+/* ========================================= */
+/* 팀 소개 (About) 페이지 전용 스타일      */
+/* ========================================= */
+.team-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-top: 3rem;
+    text-align: left;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.team-member-card {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 15px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.team-member-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.team-member-photo-wrapper {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 1.5rem auto;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    border: 4px solid #fff;
+}
+
+.team-member-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.team-member-name {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.team-member-role {
+    text-align: center;
+    font-size: 1rem;
+    color: #ff6b9d;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.team-member-bio {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #666;
 }
