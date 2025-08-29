@@ -84,7 +84,7 @@ MAKEOVER_PALETTES = {
     ],
     # 3: Muted Clay
     3: [
-        ["#9E6B58", "#4A7E94", "#9E2A2B", "#354F52"],  # Style 1 (Earthy)
+        ["#9E6B58", "#4A7E94", "#9E2A2B", "#EEFFA4"],  # Style 1 (Earthy)
         ["#CBB3A5", "#A9C6C2", "#E9A6A6", "#D7C4E0"],  # Style 2 (Soft)
         ["#5C4033", "#78866B", "#B87333", "#05A6B1"]   # Style 3 (Woodsy)
     ],
@@ -493,6 +493,8 @@ def makeover():
     if not filename or cluster_num is None:
         return "오류: 필요한 정보(파일 이름, 클러스터 번호)가 없습니다.", 400
 
+    personal_color_info = get_cluster_info(cluster_num)
+
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     img_bgr = cv2.imread(filepath)
     if img_bgr is None:
@@ -538,7 +540,6 @@ def makeover():
     # 렌즈는 hair 함수를 재사용하되, 다른 파트 번호와 색상을 전달
     img_makeup = hair(img_makeup, parsing_resized, 4, lens_color)    # 왼쪽 눈
     img_makeup = hair(img_makeup, parsing_resized, 5, lens_color)    # 오른쪽 눈
-    
 
     # 결과 이미지 저장
     result_filename = f"makeover_{palette_num}_{filename}"
@@ -551,6 +552,7 @@ def makeover():
                            palettes=MAKEOVER_PALETTES,
                            selected_cluster=cluster_num,
                            selected_palette=palette_num,
+                           personal_color_info=personal_color_info,
                            user=session.get('user'))
 
 @app.route('/download_report', methods=['POST'])
