@@ -14,6 +14,7 @@ import base64
 from io import BytesIO
 import json
 import ssl
+import time
 import albumentations as A
 from scipy import ndimage
 from skimage import exposure, color
@@ -479,6 +480,97 @@ def makeover():
                            personal_color_info=personal_color_info,
                            user=session.get('user'))
 
+
+@app.route('/developer_makeup')
+def developer_makeup_page():
+    """개발자용 메이크업 테스트 페이지를 렌더링합니다."""
+    if session.get('user') and session['user'].get('name') == 'hanwae':
+        return render_template('developer_makeup.html', user=session.get('user'))
+    else:
+        return "접근 권한이 없습니다.", 403
+
+@app.route('/upload_dev_image', methods=['POST'])
+def upload_dev_image():
+    """개발자 도구용 이미지 업로드 엔드포인트"""
+    if not (session.get('user') and session['user'].get('name') == 'hanwae'):
+        return jsonify({'success': False, 'error': 'Not authorized'}), 403
+    
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file part'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No selected file'}), 400
+
+    if file and allowed_file(file.filename):
+        filename = f"dev_upload_{int(time.time())}_{secure_filename(file.filename)}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        return jsonify({'success': True, 'uploaded_image_url': f'/uploads/{filename}'})
+    
+    return jsonify({'success': False, 'error': 'File type not allowed'}), 400
+
+@app.route('/apply_makeup_realtime', methods=['POST'])
+def apply_makeup_realtime():
+    """실시간으로 메이크업을 적용하고 결과 이미지 URL을 반환합니다."""
+    if not (session.get('user') and session['user'].get('name') == 'hanwae'):
+        return jsonify({'success': False, 'error': '접근 권한이 없습니다.'}), 403
+
+    data = request.get_json()
+    filename = data.get('filename')
+    colors = data.get('colors')
+
+    if not filename or not colors:
+        return jsonify({'success': False, 'error': '파일 이름 또는 색상 정보가 누락되었습니다.'}), 400
+
+    try:
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        img_bgr = cv2.imread(filepath)
+        if img_bgr is None:
+            return jsonify({'success': False, 'error': '원본 이미지를 찾을 수 없습니다.'}), 404
+
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+
+        img_pil_resized = Image.fromarray(img_rgb).resize((512, 512))
+        img_tensor = to_tensor(img_pil_resized).unsqueeze(0)
+        with torch.no_grad():
+            out = face_parsing_net(img_tensor)[0]
+        parsing = out.squeeze(0).cpu().numpy().argmax(0)
+        parsing_resized = np.array(Image.fromarray(parsing.astype(np.uint8)).resize((img_rgb.shape[1], img_rgb.shape[0]), Image.NEAREST))
+
+        img_makeup = img_bgr.copy()
+
+        if 'hair' in colors and colors['hair']:
+            hair_color = hex_to_bgr(colors['hair'])
+            img_makeup = hair(img_makeup, parsing_resized, 17, hair_color)
+        
+        if 'lips' in colors and colors['lips']:
+            lip_color = hex_to_bgr(colors['lips'])
+            img_makeup = hair(img_makeup, parsing_resized, 12, lip_color)
+            img_makeup = hair(img_makeup, parsing_resized, 13, lip_color)
+
+        if 'lens' in colors and colors['lens']:
+            lens_color = hex_to_bgr(colors['lens'])
+            img_makeup = hair(img_makeup, parsing_resized, 4, lens_color)
+            img_makeup = hair(img_makeup, parsing_resized, 5, lens_color)
+
+        if 'clothes' in colors and colors['clothes']:
+            clothes_color = hex_to_bgr(colors['clothes'])
+            img_makeup = hair(img_makeup, parsing_resized, 16, clothes_color)
+
+        result_filename = f"dev_{int(time.time())}_{filename}"
+        result_path = os.path.join(app.config['UPLOAD_FOLDER'], result_filename)
+        cv2.imwrite(result_path, img_makeup)
+
+        return jsonify({
+            'success': True,
+            'result_image_url': f'/uploads/{result_filename}'
+        })
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'오류가 발생했습니다: {str(e)}'}), 500
+
 @app.route('/download_report', methods=['POST'])
 def download_report():
     """결과 리포트 PDF를 생성하고 다운로드하는 라우트"""
@@ -641,10 +733,9 @@ if __name__ == '__main__':
     
     print("=" * 70)
     print(f"🚀 Enhanced Personal Color & Makeover Server Starting...")
-    print(f"📱 Model Status: {'✅ Loaded' if models_loaded else '❌ Failed'}")
+    print(f"📱 Model Status: {{'✅ Loaded' if models_loaded else '❌ Failed'}}")
     print(f"🖥️  Device: {device}")
     print(f"🌐 Server: http://127.0.0.1:5001")
     print("=" * 70)
     
     app.run(debug=True, host='0.0.0.0', port=5001)
-
