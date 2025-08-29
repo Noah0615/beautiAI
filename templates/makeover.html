@@ -82,6 +82,7 @@
                 
                 <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
                     <a href="{{ url_for('index') }}" class="cta-button">↩️ 홈으로 돌아가기</a>
+                    <a href="{{ url_for('custom_makeover_page', filename=original_image, cluster_num=selected_cluster) }}" class="cta-button">🎨 직접 메이크업 해보기</a>
                     <button id="downloadReportBtn" class="cta-button">📄 PDF 리포트 다운로드</button>
                 </div>
 
