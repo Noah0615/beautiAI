@@ -139,85 +139,9 @@ def hex_to_bgr(hex_color):
 # ==============================================================================
 # PDF 관련 헬퍼 함수
 # ==============================================================================
-class PDF(FPDF):
-    def header(self):
-        # 중요: static/fonts/ 폴더에 한글 지원 폰트(예: NanumGothic.ttf)가 있어야 합니다.
-        try:
-            self.add_font('NanumGothic', '', 'static/fonts/NanumGothic.ttf', uni=True)
-            self.set_font('NanumGothic', '', 15)
-        except RuntimeError:
-            print("WARNING: NanumGothic.ttf 폰트를 찾을 수 없습니다. 기본 폰트로 대체합니다.")
-            self.set_font('Arial', '', 15)
-        self.cell(0, 10, 'AI Personal Color Report', 0, 1, 'C')
-        self.ln(10)
+from pdf import generate_report_pdf
 
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
-    def chapter_title(self, title):
-        self.set_font(self.font_family, '', 12)
-        self.cell(0, 10, title, 0, 1, 'L')
-        self.ln(5)
-
-    def chapter_body(self, body):
-        self.set_font(self.font_family, '', 10)
-        self.multi_cell(0, 5, body)
-        self.ln()
-
-    def add_color_palette(self, palette):
-        self.set_font(self.font_family, '', 10)
-        self.cell(0, 10, 'Recommended Color Palette:', 0, 1)
-        x_start, y_start = self.get_x(), self.get_y()
-        box_size = 20
-        for color_hex in palette:
-            r, g, b = tuple(int(color_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-            self.set_fill_color(r, g, b)
-            self.rect(self.get_x(), self.get_y(), box_size, box_size, 'F')
-            self.set_xy(self.get_x() + box_size + 2, self.get_y() + box_size / 2 - 2)
-            self.cell(0, 5, color_hex)
-            self.set_xy(x_start, self.get_y() + box_size + 5)
-        self.set_xy(x_start, y_start + len(palette) * (box_size + 5) + 5)
-
-def generate_report_pdf(original_image_path, result_image_path, cluster_info):
-    pdf = PDF()
-    pdf.add_page()
-    
-    # 진단 결과
-    pdf.chapter_title(f"Your Type: {cluster_info['visual_name']}")
-    pdf.chapter_body(cluster_info['description'])
-    
-    # 추천 팔레트
-    pdf.add_color_palette(cluster_info['palette'])
-    pdf.ln(10)
-
-    # 이미지
-    pdf.chapter_title('Your Images')
-    
-    max_width = 80
-    try:
-        img_orig = Image.open(original_image_path)
-        img_result = Image.open(result_image_path)
-        
-        w_orig, h_orig = img_orig.size
-        w_res, h_res = img_result.size
-        
-        w_orig_new = max_width
-        h_orig_new = h_orig * w_orig_new / w_orig
-        
-        w_res_new = max_width
-        h_res_new = h_res * w_res_new / w_res
-
-        pdf.image(original_image_path, x=pdf.get_x(), y=pdf.get_y(), w=w_orig_new)
-        pdf.set_x(pdf.get_x() + max_width + 10)
-        pdf.image(result_image_path, x=pdf.get_x(), y=pdf.get_y(), w=w_res_new)
-    except Exception as e:
-        pdf.chapter_body(f"Error loading images: {e}")
-    
-    pdf_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"report_{os.path.basename(original_image_path)}.pdf")
-    pdf.output(pdf_file_path)
-    return pdf_file_path
 
 # ==============================================================================
 # 고급 조명 보정 함수들 (기존과 동일)
@@ -572,7 +496,13 @@ def download_report():
         result_image_path = os.path.join(app.config['UPLOAD_FOLDER'], result_image)
 
         # PDF 생성
-        pdf_path = generate_report_pdf(original_image_path, result_image_path, cluster_info)
+        pdf_path = generate_report_pdf(
+            original_image_path,
+            result_image_path,
+            cluster=cluster_num,
+            CLUSTER_DESCRIPTIONS=CLUSTER_DESCRIPTIONS,
+            output_folder=app.config['UPLOAD_FOLDER']
+        )
 
         return send_file(pdf_path, as_attachment=True)
 
@@ -717,3 +647,4 @@ if __name__ == '__main__':
     print("=" * 70)
     
     app.run(debug=True, host='0.0.0.0', port=5001)
+
