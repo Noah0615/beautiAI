@@ -513,8 +513,8 @@ def upload_dev_image():
 @app.route('/apply_makeup_realtime', methods=['POST'])
 def apply_makeup_realtime():
     """실시간으로 메이크업을 적용하고 결과 이미지 URL을 반환합니다."""
-    if not (session.get('user') and session['user'].get('name') == 'hanwae'):
-        return jsonify({'success': False, 'error': '접근 권한이 없습니다.'}), 403
+    if 'user' not in session:
+        return jsonify({'success': False, 'error': '로그인이 필요합니다.'}), 403
 
     data = request.get_json()
     filename = data.get('filename')
@@ -570,6 +570,56 @@ def apply_makeup_realtime():
     except Exception as e:
         traceback.print_exc()
         return jsonify({'success': False, 'error': f'오류가 발생했습니다: {str(e)}'}), 500
+
+def unique_preserve_order(seq):
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]
+
+@app.route('/custom_makeover')
+def custom_makeover_page():
+    """사용자 맞춤형 메이크업 페이지를 렌더링합니다."""
+    if 'user' not in session:
+        return "로그인이 필요합니다.", 401
+
+    filename = request.args.get('filename')
+    cluster_num = request.args.get('cluster_num', type=int)
+
+    if not filename or cluster_num is None:
+        return "필수 정보(파일 이름, 클러스터 번호)가 없습니다.", 400
+
+    try:
+        # 클러스터 정보와 퍼스널 컬러 이름 가져오기
+        personal_color_info = get_cluster_info(cluster_num)
+        personal_color_name = personal_color_info.get("name")
+
+        # JSON 데이터 로드
+        json_path = os.path.join(app.static_folder, 'data', 'colors.json')
+        with open(json_path, 'r', encoding='utf-8') as f:
+            all_colors_data = json.load(f)
+
+        # 해당 퍼스널 컬러에 맞는 색상 팔레트 추출
+        raw_palettes = all_colors_data.get(personal_color_name, {})
+        
+        # 색상 처리: 중복 제거 및 슬라이싱
+        processed_palettes = {
+            'hair': unique_preserve_order(raw_palettes.get('hair', []))[:5],
+            'lipstick': unique_preserve_order(raw_palettes.get('lipstick', []))[:5],
+            'lens': unique_preserve_order(raw_palettes.get('lens', []))[:5],
+            'clothing': unique_preserve_order(raw_palettes.get('clothing', []))
+        }
+
+        return render_template(
+            'custom_makeover.html',
+            user=session.get('user'),
+            original_image=filename,
+            cluster_num=cluster_num,
+            personal_color_info=personal_color_info,
+            color_palettes=processed_palettes
+        )
+    except Exception as e:
+        traceback.print_exc()
+        return f"페이지 로딩 중 오류 발생: {e}", 500
 
 @app.route('/download_report', methods=['POST'])
 def download_report():
