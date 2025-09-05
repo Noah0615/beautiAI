@@ -477,19 +477,20 @@ nav a:hover {
     grid-template-columns: 1fr;
     gap: 1.5rem;
     max-width: 900px;
-    margin: 0 auto 5rem auto; /* Add bottom margin */
+    margin: 0 auto 5rem auto;
+    /* Add bottom margin */
 }
 
 .color-card {
     background: #fff;
     border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.07);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
     overflow: hidden;
     transition: all 0.4s ease;
 }
 
 .color-card.open {
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 
 .color-card-header {
@@ -510,9 +511,10 @@ nav a:hover {
     height: 40px;
     border-radius: 50%;
     border: 3px solid white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     margin-left: -15px;
 }
+
 .color-card-preview .swatch:first-child {
     margin-left: 0;
 }
@@ -522,6 +524,7 @@ nav a:hover {
     margin: 0;
     color: #333;
 }
+
 .color-card-title p {
     font-size: 1rem;
     color: #666;
@@ -551,7 +554,8 @@ nav a:hover {
 
 .color-card.open .color-card-details {
     padding-bottom: 1.5rem;
-    max-height: 1200px; /* Increased for more colors */
+    max-height: 1200px;
+    /* Increased for more colors */
 }
 
 .detail-palette {
@@ -590,9 +594,12 @@ nav a:hover {
 .detail-palette-swatches .swatch::after {
     content: attr(data-color);
     position: absolute;
-    bottom: -20px;
+    bottom: 100%;
+    /* above the swatch */
     left: 50%;
     transform: translateX(-50%);
+    margin-bottom: 5px;
+    /* spacing */
     background: #333;
     color: white;
     padding: 2px 6px;
@@ -602,11 +609,21 @@ nav a:hover {
     visibility: hidden;
     transition: opacity 0.2s, visibility 0.2s;
     white-space: nowrap;
+    z-index: 1000;
+    /* on top */
+    pointer-events: none;
+    /* avoid blocking hover */
 }
 
 .detail-palette-swatches .swatch:hover::after {
     opacity: 1;
     visibility: visible;
+}
+
+.swatch.copied {
+    outline: 2px solid #333;
+    outline-offset: 2px;
+    transition: outline 0.2s ease;
 }
 
 /* 웹캠 모달 스타일 */
@@ -698,6 +715,7 @@ nav a:hover {
         width: 40px;
         height: 40px;
     }
+
     .swatch-row {
         gap: 0.5rem;
     }
@@ -770,7 +788,8 @@ nav a:hover {
     padding: 5px;
     border-radius: 10px;
     background-color: rgba(255, 255, 255, 0.7);
-    border: 3px solid #e0e0e0; /* 기본 테두리 색상 추가 */
+    border: 3px solid #e0e0e0;
+    /* 기본 테두리 색상 추가 */
     transition: all 0.3s ease;
     cursor: pointer;
 }
@@ -963,5 +982,6 @@ nav a:hover {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding-top: 5rem; /* Add top padding to create space from navbar */
+    padding-top: 5rem;
+    /* Add top padding to create space from navbar */
 }
