@@ -13,7 +13,10 @@
             <div class="container" style="padding-top: 100px;">
                 <div class="guide-header">
                     <h1>🎨 컬러 가이드</h1>
-                    <p class="subtitle">각 퍼스널 컬러 타입에 대한 상세 정보와 스타일링 팁을 확인해보세요.<br>카드를 클릭하면 상세 컬러 팔레트를 볼 수 있습니다.</p>
+                    <p class="subtitle">
+                        각 퍼스널 컬러 타입에 대한 상세 정보와 스타일링 팁을 확인해보세요.<br>
+                        카드를 클릭하면 상세 컬러 팔레트를 볼 수 있습니다.
+                    </p>
                 </div>
                 <div id="color-guide-container" class="color-guide-grid">
                     <!-- Color cards will be dynamically generated here -->
@@ -22,6 +25,7 @@
         </div>
     </div>
 
+    <!-- Template for color cards -->
     <template id="color-card-template">
         <div class="color-card">
             <div class="color-card-header">
@@ -50,6 +54,7 @@
             "Honey Buff": "꿀빛처럼 따뜻한 골드 베이지 계열로 건강하고 세련된 이미지를 보여줍니다.",
             "Beige Rose": "로즈빛이 감도는 베이지 계열로 우아하면서도 부드러운 매력을 살려줍니다."
         };
+
         const koreanNames = {
             "Golden": "골든 타입",
             "Warm Beige": "웜 베이지 타입",
@@ -61,29 +66,37 @@
         };
 
         // --- Helper Functions ---
-        function hexToRgb(hex) {
-            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            return result ? {
-                r: parseInt(result[1], 16),
-                g: parseInt(result[2], 16),
-                b: parseInt(result[3], 16)
-            } : null;
+        function hexToHSL(hex) {
+            hex = hex.replace(/^#/, '');
+            let r = parseInt(hex.substring(0, 2), 16) / 255;
+            let g = parseInt(hex.substring(2, 4), 16) / 255;
+            let b = parseInt(hex.substring(4, 6), 16) / 255;
+
+            let max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                let d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return { h: h * 360, s: s * 100, l: l * 100 };
         }
 
-        function getBrightness(hexColor) {
-            const rgb = hexToRgb(hexColor);
-            if (!rgb) return 0;
-            return (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b);
-        }
-
+        // --- Main DOM Logic ---
         const container = document.getElementById('color-guide-container');
         const template = document.getElementById('color-card-template');
 
         fetch("{{ url_for('static', filename='data/colors.json') }}")
             .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 return response.json();
             })
             .then(data => {
@@ -98,7 +111,7 @@
                         const card = cardFragment.querySelector('.color-card');
                         const colorData = data[typeName];
 
-                        // Header
+                        // --- Header ---
                         const previewContainer = card.querySelector('.color-card-preview');
                         colorData.preview.forEach(color => {
                             const swatch = document.createElement('div');
@@ -110,14 +123,14 @@
                         card.querySelector('.color-card-title h2').textContent = koreanNames[typeName] || typeName;
                         card.querySelector('.color-card-title p').textContent = descriptions[typeName] || '';
 
-                        // Details
+                        // --- Details ---
                         const detailsContainer = card.querySelector('.color-card-details');
                         for (const category in colorData) {
                             if (category === 'preview') continue;
 
                             const paletteDiv = document.createElement('div');
                             paletteDiv.className = 'detail-palette';
-                            
+
                             const title = document.createElement('h3');
                             title.textContent = category;
                             paletteDiv.appendChild(title);
@@ -125,20 +138,29 @@
                             const swatchesContainer = document.createElement('div');
                             swatchesContainer.className = 'detail-palette-swatches';
 
-                            // Sort colors by brightness (brightest to darkest)
-                            const sortedColors = [...colorData[category]].sort((a, b) => getBrightness(b) - getBrightness(a));
+                            // ✅ Sort colors by hue first, then lightness (lightest → darkest)
+                            const sortedColors = [...colorData[category]].sort((a, b) => {
+                                const hslA = hexToHSL(a);
+                                const hslB = hexToHSL(b);
 
-                            sortedColors.forEach((color, index) => {
+                                if (Math.abs(hslA.h - hslB.h) > 5) {
+                                    return hslA.h - hslB.h; // sort by hue
+                                }
+                                return hslB.l - hslA.l; // sort by lightness (ascending)
+                            });
+
+                            sortedColors.forEach(color => {
                                 const swatch = document.createElement('div');
                                 swatch.className = 'swatch';
                                 swatch.style.backgroundColor = color;
-                                swatch.dataset.color = color; // For tooltip
+                                swatch.dataset.color = color; // For tooltip or debugging
                                 swatchesContainer.appendChild(swatch);
                             });
 
                             paletteDiv.appendChild(swatchesContainer);
                             detailsContainer.appendChild(paletteDiv);
                         }
+
                         container.appendChild(card);
                     }
                 }
@@ -148,13 +170,29 @@
                 container.innerHTML = '<p style="text-align: center; color: #c44569;">컬러 가이드 정보를 불러오는 데 실패했습니다.</p>';
             });
 
+        // Toggle open/close + copy swatch color
         container.addEventListener('click', (e) => {
+            // 1) Toggle card open/close
             const header = e.target.closest('.color-card-header');
             if (header) {
                 const card = header.parentElement;
                 card.classList.toggle('open');
+                return; // stop here so clicking header doesn't also trigger swatch copy
+            }
+
+            // 2) Copy color when swatch is clicked
+            const swatch = e.target.closest('.swatch');
+            if (swatch && swatch.dataset.color) {
+                navigator.clipboard.writeText(swatch.dataset.color).then(() => {
+                    // Optional feedback
+                    swatch.classList.add("copied");
+                    setTimeout(() => swatch.classList.remove("copied"), 800);
+                }).catch(err => {
+                    console.error("Clipboard copy failed:", err);
+                });
             }
         });
+
     });
     </script>
 </body>
