@@ -68,8 +68,13 @@ class PDF(FPDF):
         y_start = self.get_y()
         box_size = 10
         spacing = box_size + 2
+        max_colors_per_row = 11
         
-        for color_hex in palette:
+        for i, color_hex in enumerate(palette):
+            if i > 0 and i % max_colors_per_row == 0:
+                self.set_y(self.get_y() + spacing)
+                self.set_x(x_start)
+
             r, g, b = tuple(int(color_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
             self.set_fill_color(r, g, b)
             self.set_draw_color(255, 255, 255)
@@ -77,7 +82,7 @@ class PDF(FPDF):
             self.rect(self.get_x(), self.get_y(), box_size, box_size, 'FD')
             self.set_x(self.get_x() + spacing)
 
-        self.set_y(y_start + box_size + 8)
+        self.set_y(self.get_y() + box_size + 8)
 
 def generate_report_pdf(original_image_path, result_image_path, cluster, CLUSTER_DESCRIPTIONS, output_folder="."):
     if isinstance(cluster, int):
