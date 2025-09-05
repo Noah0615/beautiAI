@@ -603,9 +603,9 @@ def custom_makeover_page():
         
         # 색상 처리: 중복 제거 및 슬라이싱
         processed_palettes = {
-            'hair': unique_preserve_order(raw_palettes.get('hair', []))[:5],
-            'lipstick': unique_preserve_order(raw_palettes.get('lipstick', []))[:5],
-            'lens': unique_preserve_order(raw_palettes.get('lens', []))[:5],
+            'hair': unique_preserve_order(raw_palettes.get('hair', [])),
+            'lipstick': unique_preserve_order(raw_palettes.get('lipstick', [])),
+            'lens': unique_preserve_order(raw_palettes.get('lens', [])),
             'clothing': unique_preserve_order(raw_palettes.get('clothing', []))
         }
 
