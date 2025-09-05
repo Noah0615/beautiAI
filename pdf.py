@@ -84,6 +84,37 @@ class PDF(FPDF):
 
         self.set_y(self.get_y() + box_size + 8)
 
+    def personal_color_summary(self, title, description, palette):
+        self.ln(10)
+        # Section Title (e.g., "Your Type: Golden")
+        self.set_font('NanumGothic', 'B', 12)
+        self.set_text_color(50, 50, 50)
+        self.cell(0, 8, title, 0, 1, 'C')
+        self.ln(1)
+
+        # Description
+        self.set_font('NanumGothic', '', 10)
+        self.set_text_color(80, 80, 80)
+        self.multi_cell(0, 6, description, 0, 'C')
+        self.ln(4)
+
+        # Color Circles
+        circle_size = 15
+        spacing = circle_size + 5
+        total_palette_width = len(palette) * spacing - 5 # Total width calculation
+        
+        x_start = self.w / 2 - total_palette_width / 2
+        self.set_x(x_start)
+        y_pos = self.get_y()
+
+        for color_hex in palette:
+            r, g, b = tuple(int(color_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+            self.set_fill_color(r, g, b)
+            self.ellipse(self.get_x(), y_pos, circle_size, circle_size, 'F')
+            self.set_x(self.get_x() + spacing)
+        
+        self.set_y(y_pos + circle_size + 8)
+
 def generate_report_pdf(original_image_path, result_image_path, cluster, CLUSTER_DESCRIPTIONS, output_folder="."):
     if isinstance(cluster, int):
         cluster_info = CLUSTER_DESCRIPTIONS[cluster]
@@ -101,33 +132,57 @@ def generate_report_pdf(original_image_path, result_image_path, cluster, CLUSTER
 
     pdf.section_title("🖼️ Virtual Styling Results")
     
-    max_height = 100
     try:
         img_orig = Image.open(original_image_path)
         img_result = Image.open(result_image_path)
         
+        # Define page layout parameters
+        content_width = pdf.w - pdf.l_margin - pdf.r_margin
+        max_height = 100.0  # Initial desired height, use float for precision
+        gap = 10
+
+        # Calculate initial dimensions based on max_height
         orig_w, orig_h = img_orig.size
         new_orig_h = max_height
-        new_orig_w = orig_w * new_orig_h / orig_h
+        new_orig_w = float(orig_w) * new_orig_h / float(orig_h) if orig_h != 0 else 0
 
         res_w, res_h = img_result.size
         new_res_h = max_height
-        new_res_w = res_w * new_res_h / res_h
+        new_res_w = float(res_w) * new_res_h / float(res_h) if res_h != 0 else 0
 
-        gap = 10
+        # Check if the total width exceeds the content area
         total_width = new_orig_w + new_res_w + gap
-        x_start = (pdf.w - total_width) / 2
+        if total_width > content_width:
+            # If it overflows, calculate a scale factor to fit the width
+            scale_factor = (content_width - gap) / (new_orig_w + new_res_w)
+            new_orig_w *= scale_factor
+            new_orig_h *= scale_factor
+            new_res_w *= scale_factor
+            new_res_h *= scale_factor
+        
+        # Recalculate total width and starting position for centering
+        final_total_width = new_orig_w + new_res_w + gap
+        x_start = pdf.l_margin + (content_width - final_total_width) / 2
+        
+        # Use the maximum height of the two (potentially rescaled) images for vertical positioning
+        final_max_height = max(new_orig_h, new_res_h)
         y_start = pdf.get_y() + 5
 
-        pdf.image(original_image_path, x=x_start, y=y_start, h=new_orig_h)
-        pdf.image(result_image_path, x=x_start + new_orig_w + gap, y=y_start, h=new_res_h)
-        pdf.set_y(y_start + max_height + 10)
+        pdf.image(original_image_path, x=x_start, y=y_start, w=new_orig_w, h=new_orig_h)
+        pdf.image(result_image_path, x=x_start + new_orig_w + gap, y=y_start, w=new_res_w, h=new_res_h)
+        pdf.set_y(y_start + final_max_height + 10)
     except Exception as e:
         pdf.section_body(f"이미지 로딩 오류: {e}")
 
     pdf.set_x(15)
     pdf.makeup_description(f"AI가 당신의 퍼스널 컬러인 '{cluster_info['visual_name']}'에 맞춰 메이크업을 적용했습니다. "
                          "추천된 렌즈, 립, 헤어 컬러가 당신의 매력을 어떻게 극대화하는지 확인해보세요.")
+
+    pdf.personal_color_summary(
+        title=f"당신의 타입은: {cluster_info['visual_name']}",
+        description=cluster_info['description'],
+        palette=cluster_info['palette']
+    )
 
     # --- PAGE 2: COLOR PALETTES ---
     pdf.add_page()

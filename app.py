@@ -53,14 +53,54 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # 퍼스널 컬러 타입별 정보 데이터
 CLUSTER_DESCRIPTIONS = {
-    0: {"name": "Golden", "visual_name": "골든 타입", "description": "명확한 웜 톤입니다.", "palette": ["#FFD700", "#FF7F50", "#FFA500", "#F4A460", "#FFFFE0"]},
-    1: {"name": "Warm Beige", "visual_name": "웜 베이지 타입", "description": "웜하지만 올리브 기운이 있습니다.", "palette": ["#D2B48C", "#BC9A6A", "#8FBC8F", "#CD853F", "#DEB887"]},
-    2: {"name": "Cool Rose", "visual_name": "쿨 로즈 타입", "description": "핑크와 레드가 혼합된 쿨 톤입니다.", "palette": ["#FFC0CB", "#FF69B4", "#DB7093", "#C71585", "#F08080"]},
-    3: {"name": "Muted Clay", "visual_name": "뮤트 클레이 타입", "description": "차분하고 톤 다운된 색감입니다.", "palette": ["#BC9A6A", "#A0826D", "#8B7D6B", "#D2B48C", "#F5DEB3"]},
-    4: {"name": "Warm Apricot", "visual_name": "웜 애프리콧 타입", "description": "안정적인 오렌지 계열의 웜 톤입니다.", "palette": ["#FFCBA4", "#FF8C69", "#FFA07A", "#F4A460", "#FFDAB9"]},
-    5: {"name": "Peachy Pink", "visual_name": "피치 핑크 타입", "description": "사랑스러운 Red-Pink 계열입니다.", "palette": ["#FFCCCB", "#FFB6C1", "#FFA0B4", "#FF91A4", "#FFEFD5"]},
-    6: {"name": "Honey Buff", "visual_name": "허니 버프 타입", "description": "유사성이 많지만 구분 가능한 톤입니다.", "palette": ["#F0DC82", "#DAA520", "#CD853F", "#DEB887", "#F5DEB3"]},
-    7: {"name": "Beige Rose", "visual_name": "베이지 로즈 타입", "description": "부드러운 베이지 로즈 톤입니다.", "palette": ["#D2B48C", "#C4A484", "#BC9A6A", "#F5DEB3", "#E6D3C7"]}
+    0: {
+        "name": "Golden",
+        "visual_name": "골든 타입",
+        "description": "햇살처럼 따뜻하고 생기 넘치는 골드 톤입니다.",
+        "palette": ["#FFE999", "#f7e6b5", "#E8A317", "#FFC800", "#E07223"]
+    },
+    1: {
+        "name": "Warm Beige",
+        "visual_name": "웜 베이지 타입",
+        "description": "따뜻하면서도 은은한 올리브 기운을 머금은 색감입니다.",
+        "palette": ["#FFF8E7", "#EEDC82", "#D2B48C", "#C68642", "#7A4A23"]
+    },
+    2: {
+        "name": "Cool Rose",
+        "visual_name": "쿨 로즈 타입",
+        "description": "맑고 시원한 장미빛의 쿨 핑크 레드 계열입니다.",
+        "palette": ["#FFC0CB", "#F08080", "#DB7093", "#FF69B4", "#C71585"]
+    },
+    3: {
+        "name": "Muted Clay",
+        "visual_name": "뮤트 클레이 타입",
+        "description": "차분하고 부드럽게 톤 다운된 뉴트럴 무드입니다.",
+        "palette": ["#FBECE9", "#ECD4C1", "#D4B4A9", "#AB8F7E", "#CBB3A5"]
+    },
+    4: {
+        "name": "Warm Apricot",
+        "visual_name": "웜 애프리콧 타입",
+        "description": "화사하면서도 포근한 오렌지빛 계열입니다.",
+        "palette": ["#FBCEB1", "#FFB84D", "#F4A460", "#E9967A", "#FF7F50"]
+    },
+    5: {
+        "name": "Peachy Pink",
+        "visual_name": "피치 핑크 타입",
+        "description": "사랑스럽고 경쾌한 피치 핑크 계열입니다.",
+        "palette": ["#FFD7D1", "#FFCBA4", "#FF9999", "#FF6F61", "#E34260"]
+    },
+    6: {
+        "name": "Honey Buff",
+        "visual_name": "허니 버프 타입",
+        "description": "꿀처럼 따뜻하고 달콤한 골든 베이지 계열입니다.",
+        "palette": ["#FFD65C", "#E3C296", "#DDB67D", "#C8A165", "#DAA520"]
+    },
+    7: {
+        "name": "Beige Rose",
+        "visual_name": "베이지 로즈 타입",
+        "description": "은은하면서도 로맨틱한 베이지 로즈 톤입니다.",
+        "palette": ["#E8C2B3", "#EA9884", "#FF9099", "#D26676", "#7D3039"]
+    }
 }
 
 # 가상 메이크업에 사용할 컬러 팔레트
