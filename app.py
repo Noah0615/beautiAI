@@ -113,9 +113,9 @@ MAKEOVER_PALETTES = {
     ],
     # 1: Warm Beige
     1: [
-        ["#A0522D", "#E1C699", "#E57373", "#FFD580"],  # Style 1 (Natural)
-        ["#4A403A", "#8DA399", "#B34747", "#9AB9B7"],  # Style 2 (Smokey)
-        ["#C78967", "#6AABBB", "#E0607F", "#691DBB"]   # Style 3 (Pastel)
+        ["#F9D7B8", "#74A5BF", "#E59595", "#EEDC82"],  # Style 1 (Warm & Bright)
+        ["#7A2E2E", "#4A7A99", "#D46B6B", "#B87B4F"],  # Style 2 (Deep & Elegant)
+        ["#9B2047", "#62A062", "#9B2047", "#A0C9E0"]   # Style 3 (Soft & Earthy)
     ],
     # 2: Cool Rose
     2: [
