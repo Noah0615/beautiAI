@@ -385,11 +385,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // index.html: 초기 페이지 설정
         const initialPage = document.body.dataset.initialPage || 'home';
         showPage(initialPage);
-    } else {
-        // makeover.html, about.html, guide.html 등 독립 페이지: 네비게이션 링크를 절대 경로로 수정
-        document.querySelectorAll('nav a[data-page]').forEach(link => {
-            link.href = `/?page=${link.dataset.page}`;
-        });
     }
 
     // 전역 이벤트 위임 (Event Delegation)
@@ -399,14 +394,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const modalLink = target.closest('[data-modal]');
         const closeModalBtn = target.closest('.close-button');
 
-        if (pageLink && isIndexPage) { // index.html에서만 SPA처럼 동작
-            e.preventDefault();
+        if (pageLink) { // Handles all data-page links
             const pageId = pageLink.dataset.page;
+            const isIndexPage = document.body.dataset.initialPage !== undefined;
+
             if (pageId === 'upload' && !window.loggedInUser) {
+                e.preventDefault();
                 showNotification('로그인이 필요한 서비스입니다.', 'info');
                 controlModal('loginModal', true);
             } else {
-                showPage(pageId);
+                if (isIndexPage) {
+                    e.preventDefault();
+                    showPage(pageId);
+                } else {
+                    // On other pages, navigate to the main app
+                    pageLink.href = `/?page=${pageId}`;
+                }
             }
         }
         
