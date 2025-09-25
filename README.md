@@ -182,4 +182,4 @@
 ## 8. 참고 문헌 및 출처
 * [Deep Armocromia: A Novel Dataset for Face Seasonal Color Analysis and Classification](https://www.researchgate.net/publication/383463705_Deep_Armocromia_A_Novel_Dataset_for_Face_Seasonal_Color_Analysis_and_Classification)
 * [COLOUR ANALYSIS CHEAT SHEETS](https://stylecoachinginstitute.com/wp-content/uploads/sites/2/2020/11/Colour-Analysis-Cheat-Sheets-_Full-Set.pdf)
-
+* [face-parsing.PyTorch](https://github.com/zllrunning/face-parsing.PyTorch)
