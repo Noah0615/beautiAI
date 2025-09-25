@@ -1,0 +1,39 @@
+
+# Core Dependencies
+torch>=1.9.1
+torchvision
+timm
+Pillow
+numpy
+scipy
+
+# Computer Vision & Image Processing
+opencv-python
+albumentations>=1.3.0
+scikit-image
+pyfacer
+
+# Machine Learning
+scikit-learn
+joblib
+
+# Web Framework
+Flask
+Werkzeug
+
+# Data Visualization & Analysis
+matplotlib
+seaborn
+
+# Utilities
+ipywidgets
+validators
+requests
+base64
+ssl
+
+# Additional dependencies that might be needed
+Jinja2
+itsdangerous
+click
+MarkupSafe

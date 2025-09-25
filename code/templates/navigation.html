@@ -1,0 +1,56 @@
+<nav>
+    <ul>
+        <li><a href="#" data-page="home">홈</a></li>
+        <li><a href="#" data-page="upload">진단하기</a></li>
+        <li><a href="{{ url_for('guide') }}">컬러 가이드</a></li>
+        <li><a href="{{ url_for('about') }}">팀 소개</a></li>
+        <!-- 로그인/사용자 정보는 main.js에서 동적으로 채워집니다 -->
+    </ul>
+</nav>
+
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h3>로그인</h3>
+        <br>
+        <form id="loginForm">
+            <input type="text" id="loginName" placeholder="아이디" style="margin-bottom:1rem; width:80%; padding:0.5rem;">
+            <input type="password" id="loginPassword" placeholder="비밀번호"
+                style="margin-bottom:1rem; width:80%; padding:0.5rem;">
+            <button type="submit" class="cta-button" style="width:80%;">로그인</button>
+        </form>
+    </div>
+</div>
+
+<div id="signupModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h3>회원가입</h3>
+        <br>
+        <form id="signupForm">
+            <input type="text" id="signupName" name="signupName" placeholder="아이디" style="margin-bottom:1rem; width:80%; padding:0.5rem;">
+            <input type="password" id="signupPassword" name="signupPassword" placeholder="비밀번호"
+                style="margin-bottom:1rem; width:80%; padding:0.5rem;">
+            <input type="email" id="signupEmail" name="signupEmail" placeholder="이메일" style="margin-bottom:1rem; width:80%; padding:0.5rem;">
+            <div style="margin-bottom:1rem; width:80%; text-align:left; margin:auto;">
+                <span style="margin-right:1rem;">성별:</span>
+                <label>
+                    <input type="radio" name="sex" value="male" style="margin-right:0.5rem;" checked> 남성
+                </label>
+                <label style="margin-left:1rem;">
+                    <input type="radio" name="sex" value="female" style="margin-right:0.5rem;"> 여성
+                </label>
+            </div>
+            <br>
+            <button type="submit" class="cta-button" style="width:80%;">회원가입</button>
+        </form>
+    </div>
+</div>
+
+<div id="profileModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h3>사용자 정보</h3>
+        <div id="profileContent" style="margin-top: 1rem;"></div>
+    </div>
+</div>

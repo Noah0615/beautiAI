@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메이크업 개발자 도구</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .dev-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .dev-main {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+        }
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1.5rem;
+            border-radius: 15px;
+        }
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .control-group input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+        }
+        .control-group input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .image-display-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .image-box {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 15px;
+        }
+        .image-box img {
+            width: 100%;
+            border-radius: 10px;
+        }
+        .image-box h3 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="animated-bg">
+        {% include 'navigation.html' %}
+        <div class="container dev-container" style="padding-top: 100px;">
+            <div class="hero-content" style="margin-bottom: 2rem;">
+                <h1>💄 메이크업 개발자 도구</h1>
+                <p>이미지를 업로드하고, 실시간으로 색상을 변경하며 최적의 조합을 찾아보세요.</p>
+            </div>
+
+            <div class="dev-main">
+                <div class="controls-panel">
+                    <h4>1. 이미지 업로드</h4>
+                    <input type="file" id="imageUpload" accept="image/*" class="cta-button" style="width: 100%; margin-top: 1rem;">
+                    <hr style="margin: 1.5rem 0;">
+                    <h4>2. 색상 실시간 변경</h4>
+                    <div class="control-group">
+                        <label for="hairColor">Hair</label>
+                        <input type="color" id="hairColor" data-part="hair" value="#8B4513">
+                        <input type="text" id="hairHex" data-part="hair" value="#8B4513">
+                    </div>
+                    <div class="control-group">
+                        <label for="lipsColor">Lips</label>
+                        <input type="color" id="lipsColor" data-part="lips" value="#CD5C5C">
+                        <input type="text" id="lipsHex" data-part="lips" value="#CD5C5C">
+                    </div>
+                    <div class="control-group">
+                        <label for="lensColor">Lens</label>
+                        <input type="color" id="lensColor" data-part="lens" value="#654321">
+                        <input type="text" id="lensHex" data-part="lens" value="#654321">
+                    </div>
+                    <div class="control-group">
+                        <label for="clothesColor">Clothes</label>
+                        <input type="color" id="clothesColor" data-part="clothes" value="#A0522D">
+                        <input type="text" id="clothesHex" data-part="clothes" value="#A0522D">
+                    </div>
+                </div>
+                <div class="image-display-area">
+                    <div class="image-box">
+                        <h3>Original</h3>
+                        <img id="originalImage" src="" alt="Original Image">
+                    </div>
+                    <div class="image-box">
+                        <h3>Makeover</h3>
+                        <img id="resultImage" src="" alt="Makeover Result">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let uploadedFilename = null;
+            let originalImageUrl = null;
+            const imageUpload = document.getElementById('imageUpload');
+            const originalImageEl = document.getElementById('originalImage');
+            const resultImageEl = document.getElementById('resultImage');
+
+            // Handle image upload
+            imageUpload.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const response = await fetch('/upload_dev_image', { method: 'POST', body: formData });
+                    const data = await response.json();
+                    if (!data.success) throw new Error(data.error);
+
+                    uploadedFilename = data.uploaded_image_url.split('/').pop();
+                    originalImageUrl = data.uploaded_image_url;
+                    originalImageEl.src = originalImageUrl;
+                    resultImageEl.src = originalImageUrl; // Initially show original image
+                    applyAllColors();
+                } catch (error) {
+                    alert(`이미지 업로드 실패: ${error.message}`);
+                }
+            });
+
+            const colorControls = document.querySelectorAll('input[type="color"], input[type="text"]');
+
+            // Sync color picker and hex input
+            colorControls.forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const part = e.target.dataset.part;
+                    const color = e.target.value;
+                    document.getElementById(`${part}Color`).value = color;
+                    document.getElementById(`${part}Hex`).value = color;
+                    applyAllColors();
+                });
+            });
+
+            async function applyAllColors() {
+                if (!uploadedFilename) {
+                    // alert('먼저 이미지를 업로드해주세요.');
+                    return;
+                }
+
+                const colors = {
+                    hair: document.getElementById('hairHex').value,
+                    lips: document.getElementById('lipsHex').value,
+                    lens: document.getElementById('lensHex').value,
+                    clothes: document.getElementById('clothesHex').value,
+                };
+
+                try {
+                    const response = await fetch('/apply_makeup_realtime', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filename: uploadedFilename, colors })
+                    });
+                    const data = await response.json();
+                    if (!data.success) throw new Error(data.error);
+
+                    // Add a cache-busting query parameter
+                    resultImageEl.src = data.result_image_url + '?t=' + new Date().getTime();
+                } catch (error) {
+                    console.error('Makeup application failed:', error);
+                    alert(`메이크업 적용 실패: ${error.message}`);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 퍼스널 컬러 어드바이저</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body data-initial-page="{{ initial_page|default('home') }}">
+    <div id="notification-container"></div>
+    <div class="animated-bg">
+        {% include 'navigation.html' %}
+        {% include 'home.html' %}
+        {% include 'upload.html' %}
+        {% include 'loading.html' %}
+        {% include 'result.html' %}
+    </div>
+
+    {% include 'webcam_modal.html' %}
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+
+</html>
