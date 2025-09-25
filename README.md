@@ -126,8 +126,8 @@
 1.  **저장소 복제:**
 
     ```bash
-    git clone https://github.com/noah0615/beautiAI.git
-    cd beautiAI
+    git clone https://github.com/pnucse-capstone2025/Capstone-2025-team-11.git
+    cd Capstone-2025-team-11.git
     ```
 
 2.  **가상 환경 생성 및 활성화 (권장):**
@@ -144,10 +144,10 @@
     pip install -r requirements.txt
     ```
 
-4.  **Flask 애플리케이션 실행:**
+4.  **app.py 애플리케이션 실행:**
 
     ```bash
-    flask run --host=0.0.0.0 --port=5001
+    python app.py
     ```
 
 5.  웹 브라우저에서 `http://127.0.0.1:5001` 주소로 접속합니다.
@@ -177,8 +177,9 @@
 | **Nyi Nyi Htun** | 색상 적용 담당 | BiSeNet 기반 얼굴 부위 분할, 알파 블렌딩을 이용한 자연스러운 색상 적용, 가상 메이크업 기능 구현 |
 | **전재원** | 퍼스널 컬러 시스템 개발 | 전체 클러스터링 프레임워크 구축, K-Means, Elbow Method, Silhouette Score를 활용한 최적 클러스터 도출, 데이터 시각화 및 분석 |
 
-### 7.2. 팀원 별 참여 후기
-
 
 ## 8\. 참고 문헌 및 출처
+## 8. 참고 문헌 및 출처
+* [Deep Armocromia: A Novel Dataset for Face Seasonal Color Analysis and Classification](https://www.researchgate.net/publication/383463705_Deep_Armocromia_A_Novel_Dataset_for_Face_Seasonal_Color_Analysis_and_Classification)
+* [Deep Armocromia: A Novel Dataset for Face Seasonal Color Analysis and Classification](https://www.researchgate.net/publication/383463705_Deep_Armocromia_A_Novel_Dataset_for_Face_Seasonal_Color_Analysis_and_Classification)
 
