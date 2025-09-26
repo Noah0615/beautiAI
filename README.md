@@ -165,7 +165,7 @@
 
 ### 6.2. 시연 영상
 
-(프로젝트의 주요 기능을 시연하는 영상 링크를 여기에 추가할 수 있습니다.)
+[![2025 전기졸업과제 11 Underdog](https://img.youtube.com/vi/k5bF-HZpHNc/0.jpg)](https://www.youtube.com/watch?si=XCs3NZHW47da-GcV&v=k5bF-HZpHNc&feature=youtu.be)
 
 ## 7\. 팀 구성
 
@@ -182,3 +182,5 @@
 * [Deep Armocromia: A Novel Dataset for Face Seasonal Color Analysis and Classification](https://www.researchgate.net/publication/383463705_Deep_Armocromia_A_Novel_Dataset_for_Face_Seasonal_Color_Analysis_and_Classification)
 * [COLOUR ANALYSIS CHEAT SHEETS](https://stylecoachinginstitute.com/wp-content/uploads/sites/2/2020/11/Colour-Analysis-Cheat-Sheets-_Full-Set.pdf)
 * [face-parsing.PyTorch](https://github.com/zllrunning/face-parsing.PyTorch)
+
+
