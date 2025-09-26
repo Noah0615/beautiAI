@@ -161,7 +161,7 @@
 
 ### 6.1. 프로젝트 소개 자료
 
-(프로젝트 발표에 사용된 PPT 등의 소개 자료를 여기에 링크하거나 첨부할 수 있습니다.)
+[프로젝트 소개 자료](https://docs.google.com/presentation/d/14MTlQ9i0AsGCralzWvKXIFZWejL5MKH3/edit?usp=sharing&ouid=111842259223879172074&rtpof=true&sd=true)
 
 ### 6.2. 시연 영상
 
