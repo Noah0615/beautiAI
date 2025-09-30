@@ -6,127 +6,237 @@
     <title>나만의 메이크업 - AI 퍼스널 컬러</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        .dev-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
+        :root {
+            --control-panel-width: 320px;
+            --gap: 2rem;
         }
+
+        /* New Header Styles */
+        .makeup-header-wrapper {
+            padding: 100px var(--gap) 1.5rem var(--gap);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .makeup-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1600px; /* Match dev-container max-width */
+            margin: 0 auto;
+        }
+
+        .dev-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 var(--gap);
+        }
+
         .dev-main {
             display: grid;
-            grid-template-columns: 300px 1fr;
-            gap: 2rem;
+            grid-template-columns: var(--control-panel-width) 1fr;
+            gap: var(--gap);
         }
+
         .controls-panel {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
             padding: 1.5rem;
             border-radius: 15px;
-            max-height: 70vh;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            height: calc(100vh - 100px - 5rem); /* Adjusted height */
             overflow-y: auto;
         }
+
         .control-group {
             margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
         }
+        .control-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
         .control-group label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             font-weight: 600;
+            font-size: 1rem;
+            color: #333;
         }
+
         .image-display-area {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+            gap: var(--gap);
+            height: calc(100vh - 100px - 5rem); /* Adjusted height */
         }
+
         .image-box {
             background: #fff;
             padding: 1rem;
             border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
         }
+
         .image-box img {
             width: 100%;
-            max-height: 60vh;
+            height: 100%;
             object-fit: contain;
             border-radius: 10px;
+            transition: opacity 0.3s ease-in-out;
         }
+
         .image-box h3 {
             text-align: center;
             margin-bottom: 1rem;
+            font-size: 1.1rem;
+            color: #555;
         }
+
         .color-swatch-palette {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+            gap: 10px;
         }
+
         .color-swatch-item {
             width: 32px;
             height: 32px;
             border-radius: 50%;
             cursor: pointer;
-            border: 3px solid #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            border: 3px solid transparent;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             transition: all 0.2s ease-in-out;
             background-color: var(--swatch-color);
         }
-        .color-swatch-item:hover {
-            transform: scale(1.1);
-        }
+        .color-swatch-item:hover { transform: scale(1.1); }
         .color-swatch-item.selected {
             border-color: #ff6b9d;
-            box-shadow: 0 0 10px #ff6b9d;
+            box-shadow: 0 0 12px #ff6b9d;
         }
+
+        .intensity-control {
+            margin-top: 1rem;
+        }
+        .intensity-control label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #555;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #eee;
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ff6b9d;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #ff6b9d;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .header-buttons .cta-button {
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            :root { --control-panel-width: 280px; }
+            .dev-main { grid-template-columns: var(--control-panel-width) 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .dev-main, .image-display-area {
+                grid-template-columns: 1fr;
+            }
+            .controls-panel, .image-display-area {
+                height: auto;
+            }
+            .image-box:first-child {
+                margin-bottom: var(--gap);
+            }
+            .makeup-header-content {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1.5rem;
+            }
+            .header-buttons {
+                justify-content: flex-end;
+            }
+        }
+
     </style>
 </head>
 <body>
+    <div id="notification-container"></div>
     <div class="animated-bg">
         {% include 'navigation.html' %}
-        <div class="container dev-container" style="padding-top: 100px;">
-            <div class="hero-content" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+
+        <div class="makeup-header-wrapper">
+            <div class="makeup-header-content">
                 <div>
                     <h1>🎨 나만의 메이크업</h1>
                     <p><strong>{{ personal_color_info.visual_name }}</strong> 타입에 어울리는 색상으로 자유롭게 스타일을 연출해보세요.</p>
                 </div>
-                <a href="{{ url_for('makeover', filename=original_image, cluster_num=cluster_num) }}" class="cta-button">↩️ 뒤로가기</a>
+                <div class="header-buttons">
+                    <button id="downloadCustomReportBtn" class="cta-button">📄 PDF 리포트</button>
+                    <a href="{{ url_for('makeover', filename=original_image, cluster_num=cluster_num) }}" class="cta-button secondary">↩️ 뒤로가기</a>
+                </div>
             </div>
+        </div>
 
+        <div class="container dev-container">
             <div class="dev-main">
                 <div class="controls-panel">
-                    <h4>색상 선택</h4>
-                    <hr style="margin: 1rem 0;">
-
+                    
+                    {% for part in [('hair', '헤어'), ('lips', '입술'), ('lens', '렌즈'), ('clothes', '옷')] %}
                     <div class="control-group">
-                        <label>헤어 (Hair)</label>
-                        <div class="color-swatch-palette" id="hair-palette">
-                            {% for color in color_palettes.hair %}
-                            <div class="color-swatch-item" style="--swatch-color: {{ color }}" data-color="{{ color }}" data-part="hair"></div>
+                        <label>{{ part[1] }} ({{ part[0]|capitalize }})</label>
+                        <div class="color-swatch-palette" id="{{ part[0] }}-palette">
+                            {% set color_key = 'lipstick' if part[0] == 'lips' else 'clothing' if part[0] == 'clothes' else part[0] %}
+                            {% for color in color_palettes[color_key] %}
+                            <div class="color-swatch-item" style="--swatch-color: {{ color }}" data-color="{{ color }}" data-part="{{ part[0] }}"></div>
                             {% endfor %}
                         </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label>입술 (Lips)</label>
-                        <div class="color-swatch-palette" id="lips-palette">
-                            {% for color in color_palettes.lipstick %}
-                            <div class="color-swatch-item" style="--swatch-color: {{ color }}" data-color="{{ color }}" data-part="lips"></div>
-                            {% endfor %}
+                        <div class="intensity-control">
+                            <label for="{{ part[0] }}Intensity">강도: <span id="{{ part[0] }}IntensityValue">0.75</span></label>
+                            <input type="range" id="{{ part[0] }}Intensity" class="intensity-slider" data-part="{{ part[0] }}" min="0.0" max="1.0" value="0.75" step="0.05">
                         </div>
                     </div>
+                    {% endfor %}
 
-                    <div class="control-group">
-                        <label>렌즈 (Lens)</label>
-                        <div class="color-swatch-palette" id="lens-palette">
-                            {% for color in color_palettes.lens %}
-                            <div class="color-swatch-item" style="--swatch-color: {{ color }}" data-color="{{ color }}" data-part="lens"></div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label>옷 (Clothes)</label>
-                        <div class="color-swatch-palette" id="clothes-palette">
-                            {% for color in color_palettes.clothing %}
-                            <div class="color-swatch-item" style="--swatch-color: {{ color }}" data-color="{{ color }}" data-part="clothes"></div>
-                            {% endfor %}
-                        </div>
-                    </div>
                 </div>
                 <div class="image-display-area">
                     <div class="image-box">
@@ -142,62 +252,128 @@
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const originalFilename = "{{ original_image }}";
-            const resultImageEl = document.getElementById('resultImage');
-            const palettes = document.querySelectorAll('.color-swatch-palette');
+    document.addEventListener('DOMContentLoaded', () => {
+        const notify = typeof showNotification === 'function' ? showNotification : (msg, type) => alert(`${type}: ${msg}`);
 
-            let selectedColors = {
-                hair: null,
-                lips: null,
-                lens: null,
-                clothes: null
-            };
+        const originalFilename = "{{ original_image }}";
+        const clusterNum = parseInt("{{ cluster_num }}", 10);
+        const resultImageEl = document.getElementById('resultImage');
+        const downloadBtn = document.getElementById('downloadCustomReportBtn');
 
-            palettes.forEach(palette => {
-                palette.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('color-swatch-item')) {
-                        const target = e.target;
-                        const part = target.dataset.part;
-                        const color = target.dataset.color;
+        let selectedColors = { hair: null, lips: null, lens: null, clothes: null };
+        let selectedIntensities = { hair: 0.75, lips: 0.75, lens: 0.75, clothes: 0.75 };
+        let currentResultFilename = originalFilename;
+        let isApplying = false;
 
-                        // Toggle selection
-                        if (target.classList.contains('selected')) {
-                            target.classList.remove('selected');
-                            selectedColors[part] = null;
-                        } else {
-                            // Deselect other swatches in the same palette
-                            palette.querySelectorAll('.color-swatch-item').forEach(sw => sw.classList.remove('selected'));
-                            target.classList.add('selected');
-                            selectedColors[part] = color;
-                        }
-                        
-                        applyAllColors();
+        // --- Event Listeners ---
+        document.querySelectorAll('.color-swatch-palette').forEach(palette => {
+            palette.addEventListener('click', (e) => {
+                if (e.target.classList.contains('color-swatch-item')) {
+                    const target = e.target;
+                    const part = target.dataset.part;
+                    const color = target.dataset.color;
+
+                    if (target.classList.contains('selected')) {
+                        target.classList.remove('selected');
+                        selectedColors[part] = null;
+                    } else {
+                        palette.querySelectorAll('.color-swatch-item').forEach(sw => sw.classList.remove('selected'));
+                        target.classList.add('selected');
+                        selectedColors[part] = color;
                     }
-                });
-            });
-
-            async function applyAllColors() {
-                // Show loading indicator if you have one
-
-                try {
-                    const response = await fetch('/apply_makeup_realtime', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ filename: originalFilename, colors: selectedColors })
-                    });
-                    const data = await response.json();
-                    if (!data.success) throw new Error(data.error);
-
-                    // Add a cache-busting query parameter to force image reload
-                    resultImageEl.src = data.result_image_url + '?t=' + new Date().getTime();
-                } catch (error) {
-                    console.error('Makeup application failed:', error);
-                    alert(`메이크업 적용 실패: ${error.message}`);
+                    applyAllColors();
                 }
-            }
+            });
         });
+
+        document.querySelectorAll('.intensity-slider').forEach(slider => {
+            const part = slider.dataset.part;
+            const valueEl = document.getElementById(`${part}IntensityValue`);
+            slider.addEventListener('input', () => {
+                if (valueEl) valueEl.textContent = parseFloat(slider.value).toFixed(2);
+            });
+            slider.addEventListener('change', () => {
+                selectedIntensities[part] = parseFloat(slider.value);
+                applyAllColors();
+            });
+        });
+
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', downloadCustomReport);
+        }
+
+        // --- Core Functions ---
+        async function applyAllColors() {
+            if (isApplying) return;
+            isApplying = true;
+            resultImageEl.style.opacity = '0.5';
+
+            try {
+                const response = await fetch('/apply_makeup_realtime', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: originalFilename,
+                        colors: selectedColors,
+                        intensities: selectedIntensities
+                    })
+                });
+                const data = await response.json();
+                if (!data.success) throw new Error(data.error);
+
+                resultImageEl.src = data.result_image_url + '?t=' + new Date().getTime();
+                currentResultFilename = data.result_filename;
+            } catch (error) {
+                console.error('Makeup application failed:', error);
+                notify(`메이크업 적용 실패: ${error.message}`, 'error');
+            } finally {
+                isApplying = false;
+                resultImageEl.style.opacity = '1';
+            }
+        }
+
+        async function downloadCustomReport() {
+            if (!currentResultFilename) {
+                notify('메이크업이 적용된 이미지가 없습니다.', 'error');
+                return;
+            }
+            notify('리포트 PDF를 생성하고 있습니다... 잠시만 기다려주세요.', 'info');
+
+            try {
+                const response = await fetch('/download_report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        original_image: originalFilename,
+                        result_image: currentResultFilename,
+                        cluster_num: clusterNum
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: 'PDF 생성 중 서버 오류' }));
+                    throw new Error(errorData.message);
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `Custom_Makeover_Report_${originalFilename.split('.')[0]}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+                notify('PDF 리포트 다운로드가 시작되었습니다.', 'success');
+            } catch (error) {
+                console.error('Report download failed:', error);
+                notify(`리포트 다운로드 실패: ${error.message}`, 'error');
+            }
+        }
+    });
     </script>
 </body>
 </html>

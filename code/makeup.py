@@ -42,11 +42,12 @@ def soft_light_blend(base, blend_color_img):
     return np.clip(result_float * 255, 0, 255).astype(np.uint8)
 
 
-def hair(image, parsing, part=17, color=[230, 50, 20]):
+def hair(image, parsing, part=17, color=[230, 50, 20], intensity=0.75):
     """
-    Applies color to a specific part of the image using soft light blending.
+    Applies color to a specific part of the image using soft light blending with adjustable intensity.
     'image' is expected in BGR format.
     'color' is a list [b, g, r].
+    'intensity' is a float between 0.0 and 1.0.
     """
     b, g, r = color
     # Create a solid color image with the target color
@@ -62,8 +63,21 @@ def hair(image, parsing, part=17, color=[230, 50, 20]):
 
     # Create a copy of the original image to modify
     changed = image.copy()
-    # Apply the blended color only to the specified part
-    changed[parsing == part] = blended_image[parsing == part]
+    
+    # Extract the pixels for the original and the makeup version
+    original_pixels = image[parsing == part]
+    makeup_pixels = blended_image[parsing == part]
+
+    if len(original_pixels) > 0:
+        # Ensure intensity is within a valid range [0.0, 1.0]
+        safe_intensity = np.clip(intensity, 0.0, 1.0)
+        
+        # Blend the makeup pixels with the original pixels based on intensity
+        # dst = src1*alpha + src2*beta + gamma
+        blended_pixels = cv2.addWeighted(makeup_pixels, safe_intensity, original_pixels, 1 - safe_intensity, 0)
+        
+        # Apply the result back to the image
+        changed[parsing == part] = blended_pixels
     
     return changed
 

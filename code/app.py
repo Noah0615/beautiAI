@@ -559,6 +559,7 @@ def apply_makeup_realtime():
     data = request.get_json()
     filename = data.get('filename')
     colors = data.get('colors')
+    intensities = data.get('intensities', {}) # Get intensities dictionary
 
     if not filename or not colors:
         return jsonify({'success': False, 'error': '파일 이름 또는 색상 정보가 누락되었습니다.'}), 400
@@ -580,23 +581,28 @@ def apply_makeup_realtime():
 
         img_makeup = img_bgr.copy()
 
+        # Apply makeup with individual intensities
         if 'hair' in colors and colors['hair']:
             hair_color = hex_to_bgr(colors['hair'])
-            img_makeup = hair(img_makeup, parsing_resized, 17, hair_color)
+            hair_intensity = intensities.get('hair', 0.75)
+            img_makeup = hair(img_makeup, parsing_resized, 17, hair_color, intensity=hair_intensity)
         
         if 'lips' in colors and colors['lips']:
             lip_color = hex_to_bgr(colors['lips'])
-            img_makeup = hair(img_makeup, parsing_resized, 12, lip_color)
-            img_makeup = hair(img_makeup, parsing_resized, 13, lip_color)
+            lips_intensity = intensities.get('lips', 0.75)
+            img_makeup = hair(img_makeup, parsing_resized, 12, lip_color, intensity=lips_intensity)
+            img_makeup = hair(img_makeup, parsing_resized, 13, lip_color, intensity=lips_intensity)
 
         if 'lens' in colors and colors['lens']:
             lens_color = hex_to_bgr(colors['lens'])
-            img_makeup = hair(img_makeup, parsing_resized, 4, lens_color)
-            img_makeup = hair(img_makeup, parsing_resized, 5, lens_color)
+            lens_intensity = intensities.get('lens', 0.75)
+            img_makeup = hair(img_makeup, parsing_resized, 4, lens_color, intensity=lens_intensity)
+            img_makeup = hair(img_makeup, parsing_resized, 5, lens_color, intensity=lens_intensity)
 
         if 'clothes' in colors and colors['clothes']:
             clothes_color = hex_to_bgr(colors['clothes'])
-            img_makeup = hair(img_makeup, parsing_resized, 16, clothes_color)
+            clothes_intensity = intensities.get('clothes', 0.75)
+            img_makeup = hair(img_makeup, parsing_resized, 16, clothes_color, intensity=clothes_intensity)
 
         result_filename = f"dev_{int(time.time())}_{filename}"
         result_path = os.path.join(app.config['UPLOAD_FOLDER'], result_filename)
@@ -604,7 +610,8 @@ def apply_makeup_realtime():
 
         return jsonify({
             'success': True,
-            'result_image_url': f'/uploads/{result_filename}'
+            'result_image_url': f'/uploads/{result_filename}',
+            'result_filename': result_filename
         })
 
     except Exception as e:
